@@ -1,0 +1,15 @@
+# Local preview config (Claude Code launch settings)
+.claude/
+
+# Backup of the original mock-up bundle
+LDA Topic Model.original.html
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Local sample documents (not part of the app)
+test-data/

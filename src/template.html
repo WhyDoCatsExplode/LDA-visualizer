@@ -1,0 +1,2534 @@
+<!DOCTYPE html>
+<html><head>
+<title>LDA visualizer</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.png" type="image/png" sizes="32x32">
+<style>
+  /* Until the runtime renders, keep its raw template (every modal, unfilled
+     {{ }} bindings) off screen, and paint the page background in the theme. */
+  x-dc { display: none !important; }
+  html { background: #fbfbfa; } html.dark { background: #0a0a0a; }
+</style>
+<script>
+  // Theme before first paint: saved choice, else the system setting. An exported
+  // page can set its own default, or lock the theme by hiding the toggle.
+  // Runs first, before the runtime script loads.
+  (function () {
+    var st = (window.__ldaSnapshot && window.__ldaSnapshot.settings) || {};
+    var m = /^(auto|light|dark)$/.test(st.theme) ? st.theme : 'auto';
+    if (st.showThemeToggle !== false) try { m = localStorage.getItem('lda-theme') || m; } catch (e) {}
+    var dark = m === 'dark' || (m === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', dark);
+  })();
+</script>
+<script src="c9b5937c-d632-41ca-8932-5cd1eaf3c705"></script>
+</head>
+<body>
+
+<x-dc>
+<helmet>
+  <style>/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("710b3c0f-1b0a-48bf-9de4-ea258900bc3c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url("dc64ed6d-0110-4a1c-a6b3-90a54d156215") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("710b3c0f-1b0a-48bf-9de4-ea258900bc3c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("dc64ed6d-0110-4a1c-a6b3-90a54d156215") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("710b3c0f-1b0a-48bf-9de4-ea258900bc3c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("dc64ed6d-0110-4a1c-a6b3-90a54d156215") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("710b3c0f-1b0a-48bf-9de4-ea258900bc3c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("dc64ed6d-0110-4a1c-a6b3-90a54d156215") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("710b3c0f-1b0a-48bf-9de4-ea258900bc3c") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("dc64ed6d-0110-4a1c-a6b3-90a54d156215") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* symbols2 */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("274245c4-06b3-4ee1-8324-7e1688fbd06b") format('woff2');
+  unicode-range: U+2000-2001, U+2004-2008, U+200A, U+23B8-23BD, U+2500-259F;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("8d0712e4-1dec-48c3-9278-e6fd45597c13") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("891dce48-a0fb-4bfc-8fdd-592541f9b8c6") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* symbols2 */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("274245c4-06b3-4ee1-8324-7e1688fbd06b") format('woff2');
+  unicode-range: U+2000-2001, U+2004-2008, U+200A, U+23B8-23BD, U+2500-259F;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("8d0712e4-1dec-48c3-9278-e6fd45597c13") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Geist Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("891dce48-a0fb-4bfc-8fdd-592541f9b8c6") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("db3281c9-6aad-497e-a510-2b886c3655e6") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url("15218c3e-3330-455a-818a-c5a82f355bc0") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+/* latin-ext */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("ff3e7ab7-ba93-4e6c-b83b-88bf6964d9a1") format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+/* latin */
+@font-face {
+  font-family: 'Instrument Serif';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("e6e6126b-1b82-44bc-886a-f752441775d1") format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+</style>
+  <style>/* Webfonts. SOURCE NOTE: the live site loads both via next/font/google
+   (Geist + Instrument Serif). No binaries shipped with the extract, so this
+   design system links the same two families from Google Fonts. Swap these
+   @import lines for local @font-face rules if you have the .woff2 files. */
+/* symbols2 */
+/* symbols2 */
+
+
+:root {
+  --font-geist-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-instrument-serif: "Instrument Serif", ui-serif, Georgia, serif;
+
+  /* Semantic aliases */
+  --font-body: var(--font-geist-sans);
+  --font-heading: var(--font-geist-sans);
+  --font-accent: var(--font-instrument-serif); /* italic, one word at a time */
+  --font-mono: var(--font-geist-mono);
+}
+</style>
+  <style>/* Colors. The site names exactly four: background, foreground, muted, border.
+   Everything else is a locally-scoped accent (status dots, pattern gradients),
+   never a second brand palette. Base values first, semantic aliases after. */
+
+:root {
+  /* Base — light */
+  --background: #fbfbfa;
+  --foreground: #171717;
+  --muted: #71717a;
+  --border: #e4e4e7;
+
+  /* Neutral ramp the Tailwind classes in the source resolve to */
+  --neutral-50: #fafafa;
+  --neutral-100: #f5f5f5;
+  --neutral-200: #e5e5e5;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-700: #404040;
+  --neutral-900: #171717;
+  --neutral-950: #0a0a0a;
+
+  /* Status accents — used only as 6–8px dots beside a label */
+  --status-available: #10b981; /* emerald-500 */
+  --status-busy: #ef4444;      /* red-500 */
+
+  /* Bento pattern gradient stops (ribbonPatternTile.ts) */
+  --pattern-cyan: hsl(185 45% 55%);
+  --pattern-violet: hsl(265 40% 58%);
+  --pattern-amber: hsl(35 60% 58%);
+  --pattern-rose: hsl(350 50% 58%);
+
+  /* Semantic aliases */
+  --surface-page: var(--background);
+  --surface-solid: #ffffff;
+  --text-body: var(--foreground);
+  --text-muted: var(--muted);
+  --text-meta: rgb(23 23 23 / 0.4);   /* uppercase tracked labels */
+  --text-inverse: #ffffff;
+  --stroke-hairline: var(--border);
+  --action-solid-bg: var(--neutral-900);
+  --action-solid-fg: #ffffff;
+}
+
+:root.dark {
+  --background: #0a0a0a;
+  --foreground: #f5f5f4;
+  --muted: #a1a1aa;
+  --border: #27272a;
+
+  --surface-solid: #171717;
+  --text-meta: rgb(255 255 255 / 0.4);
+  --text-inverse: #171717;
+  --action-solid-bg: #ffffff;
+  --action-solid-fg: #171717;
+}
+</style>
+  <style>/* Type scale. Two jobs only: a sans UI/body stack, and the prose ladder used
+   for rendered markdown. Headings shrink fast; the lower tiers go muted +
+   uppercase-tracked so they read as structure rather than shouting. */
+
+:root {
+  /* UI sizes */
+  --text-meta-size: 11px;    /* uppercase tracked meta labels */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-5xl: 3rem;
+
+  /* Prose ladder (components.md) */
+  --prose-h1: 1.375rem;
+  --prose-h2: 1.0625rem;
+  --prose-h3: 0.9375rem;
+  --prose-h4: 0.875rem;
+  --prose-h5: 0.8125rem;
+  --prose-body: 0.9375rem;
+
+  /* Weights */
+  --weight-normal: 400; /* @kind font */
+  --weight-medium: 500; /* @kind font */
+  --weight-semibold: 600; /* @kind font */
+
+  /* Line heights */
+  --leading-tight: 1.1; /* @kind font */
+  --leading-snug: 1.3; /* @kind font */
+  --leading-normal: 1.5; /* @kind font */
+  --leading-relaxed: 1.7; /* @kind font */
+
+  /* Tracking */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-meta: 0.1em;
+}
+</style>
+  <style>/* Glass — the one material. Two nested layers: a low-opacity, heavily
+   blurred outer shell and a slightly more opaque, lightly blurred inner
+   panel. Borders are a color-mix into the surface, never a separate stroke
+   color, so it reads as one material rather than glass + a frame. */
+
+:root {
+  --glass-shell-bg: rgb(245 245 245 / 0.35);   /* neutral-100/35 */
+  --glass-shell-border: rgb(23 23 23 / 0.20);  /* neutral-900/20 */
+  --glass-shell-blur: 24px;                    /* backdrop-blur-xl */
+  --glass-shell-saturate: 1.5;                 /* @kind other */
+
+  --glass-panel-bg: rgb(255 255 255 / 0.35);   /* white/35 */
+  --glass-panel-blur: 12px;                    /* backdrop-blur-md */
+
+  /* Nav/pill glass: mostly-flat backdrop -> almost no blur, or the
+     "see-through" cue disappears. */
+  --glass-pill-bg: rgb(255 255 255 / 0.05);
+  --glass-pill-blur: 1px;
+
+  --scrim-bg: rgb(0 0 0 / 0.40);
+  --scrim-blur: 4px;
+}
+
+:root.dark {
+  --glass-shell-bg: rgb(10 10 10 / 0.25);      /* neutral-950/25 */
+  --glass-shell-border: rgb(255 255 255 / 0.15);
+  --glass-panel-bg: rgb(0 0 0 / 0.25);
+}
+</style>
+  <style>/* Webfonts. SOURCE NOTE: the live site loads both via next/font/google
+   (Geist + Instrument Serif). No binaries shipped with the extract, so this
+   design system links the same two families from Google Fonts. Swap these
+   @import lines for local @font-face rules if you have the .woff2 files. */
+/* symbols2 */
+/* symbols2 */
+
+
+:root {
+  --font-geist-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-geist-mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --font-instrument-serif: "Instrument Serif", ui-serif, Georgia, serif;
+
+  /* Semantic aliases */
+  --font-body: var(--font-geist-sans);
+  --font-heading: var(--font-geist-sans);
+  --font-accent: var(--font-instrument-serif); /* italic, one word at a time */
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Colors. The site names exactly four: background, foreground, muted, border.
+   Everything else is a locally-scoped accent (status dots, pattern gradients),
+   never a second brand palette. Base values first, semantic aliases after. */
+
+:root {
+  /* Base — light */
+  --background: #fbfbfa;
+  --foreground: #171717;
+  --muted: #71717a;
+  --border: #e4e4e7;
+
+  /* Neutral ramp the Tailwind classes in the source resolve to */
+  --neutral-50: #fafafa;
+  --neutral-100: #f5f5f5;
+  --neutral-200: #e5e5e5;
+  --neutral-400: #a3a3a3;
+  --neutral-500: #737373;
+  --neutral-700: #404040;
+  --neutral-900: #171717;
+  --neutral-950: #0a0a0a;
+
+  /* Status accents — used only as 6–8px dots beside a label */
+  --status-available: #10b981; /* emerald-500 */
+  --status-busy: #ef4444;      /* red-500 */
+
+  /* Bento pattern gradient stops (ribbonPatternTile.ts) */
+  --pattern-cyan: hsl(185 45% 55%);
+  --pattern-violet: hsl(265 40% 58%);
+  --pattern-amber: hsl(35 60% 58%);
+  --pattern-rose: hsl(350 50% 58%);
+
+  /* Semantic aliases */
+  --surface-page: var(--background);
+  --surface-solid: #ffffff;
+  --text-body: var(--foreground);
+  --text-muted: var(--muted);
+  --text-meta: rgb(23 23 23 / 0.4);   /* uppercase tracked labels */
+  --text-inverse: #ffffff;
+  --stroke-hairline: var(--border);
+  --action-solid-bg: var(--neutral-900);
+  --action-solid-fg: #ffffff;
+}
+
+:root.dark {
+  --background: #0a0a0a;
+  --foreground: #f5f5f4;
+  --muted: #a1a1aa;
+  --border: #27272a;
+
+  --surface-solid: #171717;
+  --text-meta: rgb(255 255 255 / 0.4);
+  --text-inverse: #171717;
+  --action-solid-bg: #ffffff;
+  --action-solid-fg: #171717;
+}
+
+/* Type scale. Two jobs only: a sans UI/body stack, and the prose ladder used
+   for rendered markdown. Headings shrink fast; the lower tiers go muted +
+   uppercase-tracked so they read as structure rather than shouting. */
+
+:root {
+  /* UI sizes */
+  --text-meta-size: 11px;    /* uppercase tracked meta labels */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 1.875rem;
+  --text-5xl: 3rem;
+
+  /* Prose ladder (components.md) */
+  --prose-h1: 1.375rem;
+  --prose-h2: 1.0625rem;
+  --prose-h3: 0.9375rem;
+  --prose-h4: 0.875rem;
+  --prose-h5: 0.8125rem;
+  --prose-body: 0.9375rem;
+
+  /* Weights */
+  --weight-normal: 400; /* @kind font */
+  --weight-medium: 500; /* @kind font */
+  --weight-semibold: 600; /* @kind font */
+
+  /* Line heights */
+  --leading-tight: 1.1; /* @kind font */
+  --leading-snug: 1.3; /* @kind font */
+  --leading-normal: 1.5; /* @kind font */
+  --leading-relaxed: 1.7; /* @kind font */
+
+  /* Tracking */
+  --tracking-tight: -0.02em;
+  --tracking-normal: 0;
+  --tracking-meta: 0.1em;
+}
+
+/* Spacing — the Tailwind 0.25rem step the source is written against, plus the
+   handful of half-steps it actually reaches for (px-4.5, p-0.5). */
+
+:root {
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-2-5: 0.625rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-4-5: 1.125rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  /* Recurring composites */
+  --glass-outer-pad: var(--space-3); /* p-3 on the frosted shell */
+  --glass-inner-pad: var(--space-5); /* p-5 on the inner panel */
+  --page-gutter: var(--space-6);
+  --page-max: 48rem;
+}
+
+/* Radius — three steps, mapped to the Tailwind classes the source uses. */
+
+:root {
+  --radius-sm: 0.75rem;  /* xl  — inputs, small buttons, pills */
+  --radius-md: 1rem;     /* 2xl — inner glass panel, list rows */
+  --radius-lg: 1.5rem;   /* 3xl — outer card/modal shell */
+  --radius-full: 9999px;
+
+  /* Semantic */
+  --radius-input: var(--radius-sm);
+  --radius-panel: var(--radius-md);
+  --radius-shell: var(--radius-lg);
+  --radius-pill: var(--radius-full);
+}
+
+/* Elevation — all rgba(0,0,0,…); deliberately NOT overridden in dark mode
+   (the glass surfaces carry the contrast themselves). */
+
+:root {
+  --shadow-sm: 0 8px 24px rgba(0, 0, 0, 0.06);  /* pill buttons */
+  --shadow-md: 0 8px 32px rgba(0, 0, 0, 0.10);  /* nav bar, panel */
+  --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.18); /* modal / expanded card */
+
+  --elevation-pill: var(--shadow-sm);
+  --elevation-nav: var(--shadow-md);
+  --elevation-modal: var(--shadow-lg);
+}
+
+/* Glass — the one material. Two nested layers: a low-opacity, heavily
+   blurred outer shell and a slightly more opaque, lightly blurred inner
+   panel. Borders are a color-mix into the surface, never a separate stroke
+   color, so it reads as one material rather than glass + a frame. */
+
+:root {
+  --glass-shell-bg: rgb(245 245 245 / 0.35);   /* neutral-100/35 */
+  --glass-shell-border: rgb(23 23 23 / 0.20);  /* neutral-900/20 */
+  --glass-shell-blur: 24px;                    /* backdrop-blur-xl */
+  --glass-shell-saturate: 1.5;                 /* @kind other */
+
+  --glass-panel-bg: rgb(255 255 255 / 0.35);   /* white/35 */
+  --glass-panel-blur: 12px;                    /* backdrop-blur-md */
+
+  /* Nav/pill glass: mostly-flat backdrop -> almost no blur, or the
+     "see-through" cue disappears. */
+  --glass-pill-bg: rgb(255 255 255 / 0.05);
+  --glass-pill-blur: 1px;
+
+  --scrim-bg: rgb(0 0 0 / 0.40);
+  --scrim-blur: 4px;
+}
+
+:root.dark {
+  --glass-shell-bg: rgb(10 10 10 / 0.25);      /* neutral-950/25 */
+  --glass-shell-border: rgb(255 255 255 / 0.15);
+  --glass-panel-bg: rgb(0 0 0 / 0.25);
+}
+
+/* Motion. Entrances are long and soft; state changes are short. Nothing
+   bounces or overshoots — the easing curves all decelerate hard and settle. */
+
+:root {
+  --ease-entrance: cubic-bezier(0.2, 0.7, 0.2, 1); /* @kind other */
+  --ease-deblur: cubic-bezier(0, 0.85, 0.15, 1);   /* @kind other */
+  --ease-reveal: cubic-bezier(0.2, 0, 0, 1);       /* @kind other */
+  --ease-out: ease-out; /* @kind other */
+
+  --duration-fast: 0.2s;      /* @kind other */
+  --duration-modal: 0.25s;    /* @kind other */
+  --duration-glow: 0.7s;      /* @kind other */
+  --duration-entrance: 0.9s;  /* @kind other */
+  --duration-reveal: 1s;      /* @kind other */
+
+  --hover-opacity: 0.9;       /* @kind other */
+  --logo-rest-opacity: 0.35;  /* @kind other */
+  --logo-hover-opacity: 0.7;  /* @kind other */
+}
+
+/* mikaeel.ca design system — animation patterns
+   Two things worth reusing here: the "rise + de-blur" scroll-entrance for
+   grid/card layouts, and the paused/entered-instantly split that stops it
+   from replaying on every client-side page transition. See the note at the
+   bottom for the theme-toggle circular reveal too. */
+
+/* ---------------------------------------------------------------------
+   Card entrance: rise + settle + de-blur, staggered left/right by column,
+   with a per-card CSS var (--seed, 0..1, set inline per card) driving
+   drift/rotation so cards feel scattered rather than uniform.
+   Starts PAUSED (held at the 0% frame) until JS adds `.entering` when the
+   card scrolls into view (IntersectionObserver) — see the JS pattern below.
+   --------------------------------------------------------------------- */
+
+@keyframes card-rise-mid {
+  0% {
+    opacity: 0;
+    transform: translateY(110px) scale(1.13);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-rise-left {
+  0% {
+    opacity: 0;
+    transform: translate(
+        calc(-40px - var(--seed, 0.5) * 36px),
+        calc(110px + var(--seed, 0.5) * 32px)
+      )
+      scale(1.14) rotate(calc(-2.2deg - var(--seed, 0.5) * 1.4deg));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-rise-right {
+  0% {
+    opacity: 0;
+    transform: translate(
+        calc(40px + var(--seed, 0.5) * 36px),
+        calc(110px + var(--seed, 0.5) * 32px)
+      )
+      scale(1.14) rotate(calc(2.2deg + var(--seed, 0.5) * 1.4deg));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes card-blur-decay {
+  0% {
+    filter: blur(10px);
+  }
+  to {
+    filter: blur(0);
+  }
+}
+
+.entrance-card {
+  animation: card-rise-mid 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both paused;
+}
+.entrance-card[data-col="left"] {
+  animation-name: card-rise-left;
+}
+.entrance-card[data-col="right"] {
+  animation-name: card-rise-right;
+}
+
+/* Run the blur half on an inner, already-clipped/rounded wrapper — not on
+   the outer card itself. `filter: blur()` on an outer unrounded element
+   renders the blur across its plain rectangular bounds, so it visibly
+   bleeds outside the card's rounded corners for the animation's duration
+   (a stark pale smear in light mode, easy to miss but present in dark).
+   Scoping the filter to an element that's already `overflow-hidden` with
+   the final border-radius keeps the blur inside the rounded shape the
+   whole time. */
+.entrance-card-inner {
+  animation: card-blur-decay 0.9s cubic-bezier(0, 0.85, 0.15, 1) both paused;
+}
+
+.entrance-card.entering,
+.entrance-card.entering .entrance-card-inner {
+  animation-play-state: running;
+}
+
+/* IMPORTANT — this is NOT interchangeable with `.entering` above.
+   `.entering` only flips animation-play-state from paused to running, so a
+   card that's already been seen this session but remounts (e.g. a
+   client-side page transition back to a page with this grid) would still
+   PLAY THE FULL 0.9s animation from its 0% frame (opacity:0, blur(10px),
+   translateY(110px)) the moment `.entering` gets reapplied — resuming a
+   paused animation is not the same as skipping it.
+   `animation: none` removes the animation (and its 0%-frame styles)
+   entirely, so the element renders directly in the settled end state with
+   nothing left to play. Apply this class instead of `.entering` when JS
+   already knows the entrance has played once this session (see the JS
+   pattern below) — never both. */
+.entrance-card.entered-instantly,
+.entrance-card.entered-instantly .entrance-card-inner {
+  animation: none;
+}
+
+/* ---------------------------------------------------------------------
+   JS pairing (React) — module-level flag, not component state/useRef.
+   A page's grid component unmounts and remounts on every client-side page
+   transition (Home -> Blog -> Home, etc). Component state and refs reset
+   on that remount just like everything else, which is the bug this avoids:
+   without it, the scroll-triggered rise-in replays every single time the
+   page is revisited, not just the first time this tab ever saw it.
+   A variable declared at module scope (outside the component function,
+   evaluated once when the JS module loads) is shared by every instance of
+   the component for as long as that JS stays loaded in the tab — i.e.
+   exactly "this session". A hard reload or new tab genuinely re-loads the
+   module, correctly resetting it, since that IS a fresh visit worth
+   animating again.
+
+   let hasAnimatedThisSession = false; // outside the component
+
+   useEffect(() => {
+     if (hasAnimatedThisSession) {
+       for (const card of cardsRef.current) card?.classList.add("entered-instantly");
+       return; // skip the IntersectionObserver entirely
+     }
+     const observer = new IntersectionObserver((entries) => {
+       for (const entry of entries) {
+         if (entry.isIntersecting) {
+           entry.target.classList.add("entering");
+           observer.unobserve(entry.target);
+           hasAnimatedThisSession = true;
+         }
+       }
+     }, { rootMargin: "0px 0px -60px 0px" });
+     for (const card of cardsRef.current) if (card) observer.observe(card);
+     return () => observer.disconnect();
+   }, []);
+   --------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------
+   Theme toggle — circular reveal from the clicked swatch, driven by the
+   View Transitions API + a plain declarative CSS @keyframes (not the Web
+   Animations API targeting the pseudo-element directly — that combination
+   was inconsistent across Chrome versions in testing: wrong reveal origin,
+   stalling partway through. A declarative CSS animation on the
+   ::view-transition-new(root) pseudo-element is the API's own baseline
+   styling mechanism, which every VT-capable browser has to support
+   correctly.
+   --vt-x/--vt-y/--vt-r are set on <html> (inline style) right before
+   calling document.startViewTransition(), from the click coordinates of
+   the toggle that was pressed. --------------------------------------- */
+
+::view-transition-old(root),
+::view-transition-new(root),
+::view-transition-group(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+@keyframes theme-reveal {
+  from {
+    clip-path: circle(0px at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+  to {
+    clip-path: circle(var(--vt-r, 150%) at var(--vt-x, 50%) var(--vt-y, 50%));
+  }
+}
+
+.view-transition-active::view-transition-new(root) {
+  animation: theme-reveal 1s cubic-bezier(0.2, 0, 0, 1) both;
+}
+
+/* Any element that should stay visually fixed in place during the reveal
+   (a fixed nav bar, etc) instead of being swept up into the root snapshot's
+   cross-fade needs its own `[view-transition-name: <name>]` and the same
+   animation-none treatment, scoped to that name:
+     ::view-transition-group(topnav),
+     ::view-transition-old(topnav),
+     ::view-transition-new(topnav) { animation: none; }
+*/
+
+/* mikaeel.ca design system — the WebGL "holographic trading card" look
+   (HolographicCard.tsx). Layout/theming tokens live here; the tilt physics
+   and the foil shader itself live in the .tsx file. Copied as-is from the
+   live site's globals.css `.holo-*` block. Import alongside tokens.css —
+   --radius-card/--card-shadow etc. below are this component's own local
+   variables (set on .holo-hover-zone), not shared with tokens.css's
+   --radius-sm|md|lg scale, so there's no naming collision either way. */
+/* Theme-level values for the card, kept on :root so they register as tokens
+   (the component reads them below via var()). */
+:root {
+  --holo-card-shadow: 0 20px 45px rgba(0, 0, 0, 0.14);
+  --holo-card-shadow-hover: 0 30px 60px rgba(0, 0, 0, 0.22);
+  --holo-glare-opacity: 0.5; /* @kind other */
+  --holo-backlight-rgb: 23, 23, 23; /* @kind color */
+}
+
+:root.dark {
+  /* Frame/text/border intentionally NOT overridden — a colored/dark frame
+     reads as a different (worse) object. Only the shadow deepens, so the
+     white card still pops against a dark page background. */
+  --holo-card-shadow: 0 20px 45px rgba(0, 0, 0, 0.5);
+  --holo-card-shadow-hover: 0 30px 70px rgba(0, 0, 0, 0.65);
+  --holo-glare-opacity: 0.35; /* @kind other */
+  /* White backlight reads as light spilling out from behind the card once
+     the page itself is dark enough to show it against. */
+  --holo-backlight-rgb: 255, 255, 255; /* @kind color */
+}
+
+.holo-hover-zone {
+  /* Polaroid frame stays white in both themes — a colored/dark frame reads
+     as a different (worse) object entirely, not just a themed one, so this
+     is one of the few things on the card that deliberately doesn't follow
+     .dark. */
+  --frame-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: var(--holo-card-shadow);
+  --card-shadow-hover: var(--holo-card-shadow-hover);
+  --glare-opacity: var(--holo-glare-opacity);
+  --radius-card: 1.125rem;
+  --frame-inset: 6px;
+  display: inline-block;
+  position: relative;
+  perspective: 900px;
+}
+
+.holo-tilt {
+  width: 100%;
+  transform-style: preserve-3d;
+  transform: perspective(900px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1);
+  will-change: transform;
+}
+
+.holo-card {
+  position: relative;
+  width: 17rem;
+  max-width: 100%;
+  border-radius: var(--radius-card);
+  background: var(--frame-bg);
+  border: 1px solid var(--card-border);
+  box-shadow: var(--card-shadow);
+  padding: var(--frame-inset);
+  transition: box-shadow 0.4s ease;
+}
+
+.holo-hover-zone:hover .holo-card {
+  box-shadow: var(--card-shadow-hover);
+}
+
+/* Hover-only ambient glow behind the card (HolographicCard's `backlight`
+   prop) — not cursor-tracking like .holo-glare below (that's a reflection
+   ON the surface; this is a light source behind it). A native box-shadow
+   on .holo-card itself, not a separate blurred/absolutely-positioned div:
+   an earlier version used a sibling div with `filter: blur()`, which
+   proved unreliable twice over — a negative z-index escaped its intended
+   local stacking order into the page's own much larger one, and even
+   fixed, a small blurred div at this card's size read as invisible against
+   a textured page background no matter how far opacity/inset were pushed.
+   box-shadow sidesteps both: it's a paint property of the element's own
+   border box (nothing to mis-stack) and composites via the browser's own
+   shadow renderer rather than a filter (reads as a confident glow at a
+   modest size instead of a barely-visible blur).
+   Placed AFTER the plain :hover rule above so it wins the cascade at equal
+   selector specificity (source order is the tiebreaker) instead of being
+   silently overridden by it.
+   The glow's blur/spread radius (32px/10px) is IDENTICAL in both states
+   below — only the color's alpha changes (0 -> 0.55). Animating the
+   radius too (0 0 -> 32px 10px) made the glow visibly grow/shrink in sync
+   with the fade, which read as a sudden pop rather than a soft dissolve,
+   especially leaving. Holding the shape constant and fading only the
+   alpha is what makes it read as a gentle fade. */
+.holo-hover-zone--backlit .holo-card {
+  box-shadow:
+    var(--card-shadow),
+    0 0 32px 10px rgba(var(--holo-backlight-rgb), 0);
+  transition:
+    box-shadow 0.7s ease-out,
+    opacity 0.4s ease;
+}
+
+.holo-hover-zone--backlit:hover .holo-card {
+  box-shadow:
+    var(--card-shadow-hover),
+    0 0 32px 10px rgba(var(--holo-backlight-rgb), 0.55);
+}
+
+.holo-art {
+  position: relative;
+  border-radius: calc(var(--radius-card) - 6px);
+  overflow: hidden;
+  aspect-ratio: 272 / 392;
+  background: #111;
+}
+
+.holo-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* No WebGL: fall back to a plain photo, no foil effect. */
+.holo-tilt.no-gl .holo-canvas {
+  display: none;
+}
+
+.holo-tilt.no-gl .holo-art {
+  background-image: var(--holo-fallback-image, none);
+  background-size: cover;
+  background-position: var(--holo-fallback-position, center);
+}
+
+/* Cursor-tracking spotlight (HolographicCard's `glareIntensity` prop —
+   0 disables this layer entirely via the multiplier below). Two radial
+   layers: a small, brighter hot core right at the cursor (the actual
+   "spotlight") plus a wider, softer falloff underneath for the broader
+   glass-catching-light glow. Both track the pointer's own position
+   directly (--mx/--my, set from real pointer coordinates in
+   HolographicCard.tsx — not derived from the tilt angle, which reads as
+   laggy/misaligned from the actual cursor). */
+.holo-glare {
+  position: absolute;
+  inset: var(--frame-inset) var(--frame-inset) auto;
+  aspect-ratio: 272 / 392;
+  border-radius: calc(var(--radius-card) - 6px);
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(
+      circle at var(--mx, 50%) var(--my, 50%),
+      rgba(255, 255, 255, calc(var(--glare-opacity) * 1.7 * var(--glare-intensity, 1))) 0%,
+      transparent 22%
+    ),
+    radial-gradient(
+      ellipse at var(--mx, 50%) var(--my, 50%),
+      rgba(255, 255, 255, calc(var(--glare-opacity) * var(--glare-intensity, 1))) 0%,
+      transparent 55%
+    );
+  transition: opacity 0.3s ease;
+}
+
+.holo-hover-zone:hover .holo-glare {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .holo-card,
+  .holo-glare {
+    transition: none;
+  }
+}
+
+</style>
+  <script src="39a47656-1e23-480a-a328-7949e305a9ce"></script>
+  <style>
+    html, body { margin: 0; background: var(--background); color: var(--foreground); }
+    a { color: var(--foreground); } a:hover { opacity: .9; }
+    .lda-sym { text-transform: none; letter-spacing: 0; }
+    @keyframes ldaTip { from { opacity: 0; transform: translateY(4px) scale(.97); } to { opacity: 1; transform: none; } }
+  </style>
+</helmet>
+<sc-if value="{{ showRibbon }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="MikaDesignSystem_f8c809.RibbonWaveBackground" hint-size="0px,0px"></x-import></sc-if>
+<sc-if value="{{ tipOn }}" hint-placeholder-val="{{ false }}">
+  <div style="position: fixed; left: {{ tipX }}; top: {{ tipY }}; z-index: 50; width: 272px; box-sizing: border-box; font-family: var(--font-body); color: var(--foreground); pointer-events: none; border-radius: 1.25rem; padding: 0; background: color-mix(in oklab, var(--background) 82%, transparent); backdrop-filter: blur(14px) saturate(1.8); -webkit-backdrop-filter: blur(14px) saturate(1.8); box-shadow: 0 16px 48px rgb(0 0 0 / 0.18); animation: ldaTip .18s cubic-bezier(0.2,0.7,0.2,1);">
+    <div style="padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
+          <span style="font-family: var(--font-accent); font-style: italic; font-size: 22px; line-height: 1.1; color: var(--foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ tipWord }}</span>
+          <span title="p(z | w, d): the chance this word belongs to each topic, given this document's topic mix (θ)" style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); white-space: nowrap;">p(z | w, d)</span>
+        </div>
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Topic assignment (<span class="lda-sym">z</span>)</span>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 7px;">
+        <sc-for list="{{ tipRows }}" as="t" hint-placeholder-count="4">
+          <div style="display: grid; grid-template-columns: 7px minmax(0, 1fr) 72px 34px; column-gap: 8px; align-items: center; opacity: {{ t.op }};">
+            <span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ t.color }};"></span>
+            <span style="font-size: 13px; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.gloss }}</span>
+            <div style="height: 4px; border-radius: 9999px; background: var(--border); overflow: hidden;"><div style="height: 100%; width: {{ t.w }}; background: {{ t.color }};"></div></div>
+            <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: right;">{{ t.p }}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="padding-top: 10px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--muted);">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;"><span>{{ tipShareLabel }}</span><span style="font-family: var(--font-mono); font-size: 11px; color: var(--foreground);">{{ tipShare }}</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;"><span>Highlight confidence · floor</span><span style="font-family: var(--font-mono); font-size: 11px; color: var(--foreground);">{{ tipConf }}</span></div>
+        <div>{{ tipNote }}</div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{ stopOn }}" hint-placeholder-val="{{ false }}">
+  <div sc-camel-on-click="{{ closeStop }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
+  <div sc-camel-on-click="{{ closeStop }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+    <div role="dialog" aria-modal="true" aria-label="Edit stopwords" sc-camel-on-click="{{ stopClick }}" style="width: 100%; max-width: 640px; opacity: {{ sOp }}; transform: scale({{ sScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
+      <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
+        <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 16px;">
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <button type="button" sc-camel-on-click="{{ closeStop }}" aria-label="Close (Esc)" style="display: flex; align-items: center; gap: 10px; border: 0; padding: 0; background: none; cursor: pointer; transition: color .2s; font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);" style-hover="color: var(--foreground);"><span aria-hidden="true" style="font-size: 15px; letter-spacing: 0; line-height: 1;">⟵</span>Esc</button>
+            <span style="font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);">Preprocessing</span>
+          </div>
+          <h2 style="margin: -4px 0 0; font-size: 1.375rem; font-weight: 500; letter-spacing: -0.01em;">Stopwords</h2>
+          <div style="margin-top: -6px; font-size: 14px; line-height: 1.6; color: var(--muted);">Words dropped before fitting, along with punctuation, numbers and symbols. Matching ignores case.</div>
+
+          <div style="display: flex; gap: 8px;">
+            <input type="text" autocomplete="off" spellcheck="false" aria-label="Filter or add stopwords" placeholder="Filter, or type words to add (comma or space separated)" value="{{ stopInput }}" sc-camel-on-change="{{ setStopInput }}" sc-camel-on-key-down="{{ stopKey }}" style="flex: 1; min-width: 0; height: 38px; box-sizing: border-box; padding: 0 14px; border-radius: var(--radius-input); border: 1px solid var(--glass-shell-border); background: color-mix(in oklab, var(--background) 55%, transparent); color: var(--foreground); font-family: var(--font-body); font-size: 14px; outline: none;">
+            <button type="button" sc-camel-on-click="{{ addStop }}" style="height: 38px; padding: 0 16px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); color: var(--foreground); font-family: var(--font-body); font-size: 13px; cursor: {{ addCursor }}; opacity: {{ addOp }};">Add</button>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <span style="font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);">{{ stopSummary }}</span>
+            <span style="display: flex; gap: 14px;">
+              <button type="button" sc-camel-on-click="{{ resetStop }}" style="border: 0; padding: 0; background: none; color: var(--foreground); font-family: var(--font-body); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border); cursor: pointer;">Reset to default</button>
+              <button type="button" sc-camel-on-click="{{ clearStop }}" style="border: 0; padding: 0; background: none; color: var(--foreground); font-family: var(--font-body); font-size: 12px; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border); cursor: pointer;">Clear all</button>
+            </span>
+          </div>
+          <div style="height: 240px; overflow-y: auto; padding: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+            <sc-for list="{{ stopChips }}" as="w" hint-placeholder-count="24">
+              <span style="display: inline-flex; align-items: center; gap: 2px; height: 26px; padding: 0 4px 0 10px; border-radius: 9999px; border: 1px solid var(--glass-shell-border); background: {{ w.bg }}; font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">{{ w.word }}<button type="button" sc-camel-on-click="{{ w.remove }}" aria-label="{{ w.label }}" style="width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 9999px; background: transparent; color: var(--muted); cursor: pointer;" style-hover="color: var(--status-busy);"><svg width="10" height="10" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button></span>
+            </sc-for>
+            <sc-if value="{{ stopEmpty }}" hint-placeholder-val="{{ false }}"><span style="font-size: 13px; color: var(--muted);">{{ stopEmptyText }}</span></sc-if>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+            <span style="font-size: 12px; line-height: 1.5; color: var(--muted);">{{ stopNote }}</span>
+            <button type="button" sc-camel-on-click="{{ applyStop }}" style="flex-shrink: 0; height: 36px; padding: 0 16px; border-radius: 0.75rem; border: 0; background: var(--action-solid-bg); color: var(--action-solid-fg); font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: {{ applyCursor }}; opacity: {{ applyOp }};" style-hover="opacity: .9;">{{ applyLabel }}</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{ pageOn }}" hint-placeholder-val="{{ false }}">
+  <div sc-camel-on-click="{{ closePage }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
+  <div sc-camel-on-click="{{ closePage }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+    <div role="dialog" aria-modal="true" aria-label="Export interactive page" sc-camel-on-click="{{ stopClick }}" style="width: 100%; max-width: 620px; opacity: {{ pOp }}; transform: scale({{ pScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
+      <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
+        <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 18px;">
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <button type="button" sc-camel-on-click="{{ closePage }}" aria-label="Close (Esc)" style="display: flex; align-items: center; gap: 10px; border: 0; padding: 0; background: none; cursor: pointer; transition: color .2s; font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);" style-hover="color: var(--foreground);"><span aria-hidden="true" style="font-size: 15px; letter-spacing: 0; line-height: 1;">⟵</span>Esc</button>
+            <span style="font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);">Export</span>
+          </div>
+          <h2 style="margin: -4px 0 0; font-size: 1.375rem; font-weight: 500; letter-spacing: -0.01em;">Interactive page</h2>
+          <div style="margin-top: -8px; font-size: 14px; line-height: 1.6; color: var(--muted);">One self-contained <span style="font-family: var(--font-mono); font-size: 13px; color: var(--foreground);">.html</span> with this corpus and model built in. Host it anywhere or embed it in an iframe.</div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <label for="lda-export-title" style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Title</label>
+            <input id="lda-export-title" type="text" autocomplete="off" spellcheck="false" value="{{ xTitle }}" sc-camel-on-change="{{ setXTitle }}" style="height: 40px; box-sizing: border-box; padding: 0 14px; border-radius: var(--radius-input); border: 1px solid var(--glass-shell-border); background: color-mix(in oklab, var(--background) 55%, transparent); color: var(--foreground); font-family: var(--font-body); font-size: 14px; outline: none;" style-focus="border-color: var(--foreground);">
+            <div style="margin-top: -2px; font-size: 12px; color: var(--muted);">Wrap words in <span style="font-family: var(--font-mono);">*asterisks*</span> for the italic accent.</div>
+            <div style="padding-top: 2px; font-size: 1.125rem; font-weight: 500; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><sc-for list="{{ xTitleSegs }}" as="ts" hint-placeholder-count="2"><span style="font-family: {{ ts.font }}; font-style: {{ ts.style }}; font-weight: {{ ts.weight }}; font-size: {{ ts.size }};">{{ ts.text }}</span></sc-for></div>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Controls</span>
+            <button type="button" role="switch" aria-checked="{{ xControls.on }}" sc-camel-on-click="{{ toggleXControls }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--foreground); font-family: var(--font-body); text-align: left; cursor: pointer;" style-hover="background: color-mix(in oklab, var(--foreground) 5%, transparent);">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;"><span style="font-size: 14px;">Number of topics, highlight floor &amp; stopwords</span><span style="font-size: 12px; color: var(--muted);">{{ xControlsHint }}</span></span>
+              <span style="flex-shrink: 0; position: relative; width: 32px; height: 18px; border-radius: 9999px; background: {{ xControls.track }}; transition: background .2s;"><span style="position: absolute; top: 2px; left: {{ xControls.knob }}; width: 14px; height: 14px; border-radius: 9999px; background: {{ xControls.knobBg }}; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: left .2s cubic-bezier(0.2,0.7,0.2,1);"></span></span>
+            </button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Background</span>
+            <button type="button" role="switch" aria-checked="{{ xRibbon.on }}" sc-camel-on-click="{{ toggleXRibbon }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--foreground); font-family: var(--font-body); text-align: left; cursor: pointer;" style-hover="background: color-mix(in oklab, var(--foreground) 5%, transparent);">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;"><span style="font-size: 14px;">Ribbon background</span><span style="font-size: 12px; color: var(--muted);">{{ xRibbonHint }}</span></span>
+              <span style="flex-shrink: 0; position: relative; width: 32px; height: 18px; border-radius: 9999px; background: {{ xRibbon.track }}; transition: background .2s;"><span style="position: absolute; top: 2px; left: {{ xRibbon.knob }}; width: 14px; height: 14px; border-radius: 9999px; background: {{ xRibbon.knobBg }}; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: left .2s cubic-bezier(0.2,0.7,0.2,1);"></span></span>
+            </button>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Theme</span>
+            <button type="button" role="switch" aria-checked="{{ xToggle.on }}" sc-camel-on-click="{{ toggleXToggle }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: transparent; color: var(--foreground); font-family: var(--font-body); text-align: left; cursor: pointer;" style-hover="background: color-mix(in oklab, var(--foreground) 5%, transparent);">
+              <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0;"><span style="font-size: 14px;">Theme toggle</span><span style="font-size: 12px; color: var(--muted);">{{ xToggleHint }}</span></span>
+              <span style="flex-shrink: 0; position: relative; width: 32px; height: 18px; border-radius: 9999px; background: {{ xToggle.track }}; transition: background .2s;"><span style="position: absolute; top: 2px; left: {{ xToggle.knob }}; width: 14px; height: 14px; border-radius: 9999px; background: {{ xToggle.knobBg }}; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: left .2s cubic-bezier(0.2,0.7,0.2,1);"></span></span>
+            </button>
+            <div role="radiogroup" aria-label="Exported theme" style="align-self: flex-start; display: flex; gap: 2px; padding: 3px; border-radius: 0.8rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg);">
+              <sc-for list="{{ xThemes }}" as="tb" hint-placeholder-count="3">
+                <button type="button" role="radio" aria-checked="{{ tb.sel }}" sc-camel-on-click="{{ tb.run }}" style="height: 30px; padding: 0 14px; border: 0; border-radius: 0.6rem; background: {{ tb.bg }}; color: {{ tb.fg }}; font-family: var(--font-body); font-size: 13px; cursor: pointer; transition: background .2s, color .2s;">{{ tb.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px;">
+            <button type="button" sc-camel-on-click="{{ downloadPage }}" style="display: flex; align-items: center; gap: 8px; height: 36px; padding: 0 16px; border-radius: 0.75rem; border: 0; background: var(--action-solid-bg); color: var(--action-solid-fg); font-family: var(--font-body); font-size: 13px; font-weight: 500; cursor: pointer;" style-hover="opacity: .9;"><svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>Download .html</button>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{ importOn }}" hint-placeholder-val="{{ false }}">
+  <div sc-camel-on-click="{{ closeImport }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
+  <div sc-camel-on-click="{{ closeImport }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+    <div role="dialog" aria-modal="true" aria-label="Import a model" sc-camel-on-click="{{ stop }}" style="width: 100%; max-width: 760px; opacity: {{ iOp }}; transform: scale({{ iScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
+      <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
+        <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 18px;">
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <button type="button" sc-camel-on-click="{{ closeImport }}" aria-label="Close (Esc)" style="display: flex; align-items: center; gap: 10px; border: 0; padding: 0; background: none; cursor: pointer; transition: color .2s; font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);" style-hover="color: var(--foreground);"><span aria-hidden="true" style="font-size: 15px; letter-spacing: 0; line-height: 1;">⟵</span>Esc</button>
+            <span style="font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);">Import model</span>
+          </div>
+          <h2 style="margin: -4px 0 0; font-size: 1.375rem; font-weight: 500; letter-spacing: -0.01em;">Bring a model you fitted elsewhere</h2>
+
+          <div style="font-size: 14px; line-height: 1.6; color: var(--muted);">Run the snippet for your library after fitting to write a <span style="font-family: var(--font-mono); font-size: 13px; color: var(--foreground);">.json</span>, then load it below. Topic numbers are kept exactly as your library numbered them.</div>
+
+          <div role="tablist" style="align-self: flex-start; display: flex; gap: 2px; padding: 3px; border-radius: 0.8rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg);">
+            <sc-for list="{{ importTabs }}" as="tb" hint-placeholder-count="3">
+              <button type="button" role="tab" aria-selected="{{ tb.sel }}" sc-camel-on-click="{{ tb.run }}" style="height: 30px; padding: 0 12px; border: 0; border-radius: 0.6rem; background: {{ tb.bg }}; color: {{ tb.fg }}; font-family: var(--font-body); font-size: 13px; cursor: pointer; transition: background .2s, color .2s;">{{ tb.label }}</button>
+            </sc-for>
+          </div>
+
+          <div style="position: relative; border: 1px solid var(--border); border-radius: var(--radius-sm); background: color-mix(in oklab, var(--background) 55%, transparent);">
+            <button type="button" sc-camel-on-click="{{ copySnippet }}" style="position: absolute; top: 10px; right: 10px; height: 28px; padding: 0 12px; border: 1px solid var(--glass-shell-border); border-radius: 0.6rem; background: var(--glass-shell-bg); color: var(--foreground); font-family: var(--font-body); font-size: 12px; cursor: pointer;" style-hover="opacity: .9;">{{ copyLabel }}</button>
+            <pre style="margin: 0; max-height: 34vh; overflow: auto; padding: 16px 18px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; color: var(--foreground); tab-size: 4; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">{{ snippet }}</pre>
+          </div>
+          <div style="margin-top: -8px; font-size: 12px; color: var(--muted);">{{ snippetNote }} Also saved as <span style="font-family: var(--font-mono);">{{ snippetFile }}</span> in the project.</div>
+
+          <label style="display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 1px dashed var(--glass-shell-border); border-radius: var(--radius-sm); cursor: pointer; transition: border-color .2s;" style-hover="border-color: var(--foreground);">
+            <svg width="20" height="20" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; color: var(--muted);"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
+            <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+              <span style="font-size: 14px;">Choose the model <span style="font-family: var(--font-mono); font-size: 13px;">.json</span>, or drop it anywhere</span>
+              <span style="font-size: 12px; color: var(--muted);">Left the texts out? Select the .txt files together with the JSON to get the per-word view.</span>
+            </span>
+            <input type="file" multiple="multiple" accept=".json,application/json,.txt,text/plain,.zip,application/zip" sc-camel-on-change="{{ upload }}" style="display: none;">
+          </label>
+          <sc-if value="{{ importError }}" hint-placeholder-val="{{ false }}"><div role="alert" style="margin-top: -6px; font-size: 13px; color: var(--status-busy);">{{ importError }}</div></sc-if>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+<sc-if value="{{ modalOn }}" hint-placeholder-val="{{ false }}">
+  <div sc-camel-on-click="{{ closeModal }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
+  <div sc-camel-on-click="{{ closeModal }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+    <div role="dialog" aria-modal="true" aria-label="{{ mTitle }}" sc-camel-on-click="{{ stop }}" style="width: 100%; max-width: 820px; opacity: {{ mOp }}; transform: scale({{ mScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
+      <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
+        <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 20px;">
+
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
+            <button type="button" sc-camel-on-click="{{ closeModal }}" aria-label="Close (Esc)" style="display: flex; align-items: center; gap: 10px; border: 0; padding: 0; background: none; cursor: pointer; transition: color .2s; font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);" style-hover="color: var(--foreground);"><span aria-hidden="true" style="font-size: 15px; letter-spacing: 0; line-height: 1;">⟵</span>Esc</button>
+            <span style="display: flex; align-items: center; gap: 8px; font-family: var(--font-body); font-size: var(--text-meta-size); text-transform: uppercase; letter-spacing: var(--tracking-meta); color: var(--text-meta); line-height: var(--leading-snug);"><span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ mColor }};"></span>{{ mMeta }}</span>
+          </div>
+          <h2 style="margin: -4px 0 0; font-family: var(--font-accent); font-style: italic; font-weight: 400; font-size: 34px; line-height: 1.05; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ mGloss }}</h2>
+
+
+          <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px;">
+            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);"><span>Top {{ mCount }} words (<span class="lda-sym">w</span>)</span><span title="β = p(w | z): the probability of each word given this topic. The same in every document.">Topic-word distribution · <span class="lda-sym">β</span></span></div>
+              <div style="max-height: 46vh; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 3px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+                <sc-for list="{{ mWords }}" as="w" hint-placeholder-count="10">
+                  <div style="display: grid; grid-template-columns: 22px minmax(0, 1fr) minmax(40px, 1fr) 48px; column-gap: 10px; align-items: center; font-size: 14px; line-height: 1.7;">
+                    <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: right;">{{ w.rank }}</span>
+                    <span style="min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ w.word }}</span>
+                    <div style="height: 4px; border-radius: 9999px; background: var(--border); overflow: hidden;"><div style="height: 100%; width: {{ w.w }}; background: {{ mColor }};"></div></div>
+                    <span style="font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-align: right;">{{ w.p }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
+              <div style="display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);"><span title="θ: the proportion of each document made up of this topic">Documents by topic mixture</span><span class="lda-sym">θ</span></div>
+              <div style="max-height: 46vh; overflow-y: auto; overflow-x: hidden; padding: 0 8px; margin: 0 -8px; display: flex; flex-direction: column; gap: 2px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+                <sc-for list="{{ mDocs }}" as="d" hint-placeholder-count="6">
+                  <div sc-camel-on-click="{{ d.open }}" title="Open {{ d.name }}" style="display: grid; grid-template-columns: minmax(0, 1fr) 56px 36px 10px; column-gap: 10px; align-items: center; padding: 6px 8px; margin: 0 -8px; border-radius: 0.6rem; font-size: 14px; cursor: pointer;" style-hover="background: color-mix(in oklab, var(--foreground) 6%, transparent);">
+                    <span style="min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ d.name }}</span>
+                    <div style="height: 4px; border-radius: 9999px; background: var(--border); overflow: hidden;"><div style="height: 100%; width: {{ d.w }}; background: {{ mColor }};"></div></div>
+                    <span style="font-family: var(--font-mono); font-size: 12px; color: var(--muted); text-align: right;">{{ d.pct }}</span>
+                    <span style="color: var(--muted);">›</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</sc-if>
+<div style="position: relative; z-index: 1; min-height: 100vh; box-sizing: border-box; padding: 40px 32px 88px; background: transparent; color: var(--foreground); font-family: var(--font-body); overflow-x: auto;">
+  <footer style="position: absolute; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; pointer-events: none;">
+    <a href="https://mikaeel.ca" target="_blank" rel="noopener" style="pointer-events: auto; display: flex; align-items: baseline; gap: 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-meta); text-decoration: none; opacity: .7; transition: opacity .2s;" style-hover="opacity: 1;">
+      <span>Built by</span><em style="font-family: var(--font-accent); font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--muted);">Mika</em><span style="color: var(--border);">|</span><span style="text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--muted);">mikaeel.ca</span>
+    </a>
+  </footer>
+  <div style="min-width: 1400px; max-width: 1600px; margin: 0 auto; display: flex; flex-direction: column; gap: 28px;">
+
+    <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <h1 style="margin: 0; font-size: 1.375rem; font-weight: 500; letter-spacing: -0.01em;"><sc-for list="{{ titleSegs }}" as="ts" hint-placeholder-count="2"><span style="font-family: {{ ts.font }}; font-style: {{ ts.style }}; font-weight: {{ ts.weight }}; font-size: {{ ts.size }};">{{ ts.text }}</span></sc-for></h1>
+      </div>
+      <sc-if value="{{ showThemeToggle }}" hint-placeholder-val="{{ true }}">
+      <div role="radiogroup" aria-label="Theme" style="display: inline-flex; align-items: center; gap: 2px; border-radius: var(--radius-full); background: rgb(23 23 23 / 0.05); padding: 2px;">
+        <sc-for list="{{ themes }}" as="th" hint-placeholder-count="3">
+          <button type="button" role="radio" aria-checked="{{ th.checked }}" aria-label="{{ th.label }}" title="{{ th.label }}" sc-camel-on-click="{{ th.select }}" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: var(--radius-full); border: 0; cursor: pointer; padding: 0; background: {{ th.bg }}; box-shadow: {{ th.shadow }}; color: {{ th.color }}; transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);">
+            <sc-if value="{{ th.isAuto }}" hint-placeholder-val="{{ false }}"><svg sc-camel-view-box="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"></path></svg></sc-if>
+            <sc-if value="{{ th.isLight }}" hint-placeholder-val="{{ false }}"><svg sc-camel-view-box="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg></sc-if>
+            <sc-if value="{{ th.isDark }}" hint-placeholder-val="{{ false }}"><svg sc-camel-view-box="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="currentColor" stroke="none"></path></svg></sc-if>
+          </button>
+        </sc-for>
+      </div>
+      </sc-if>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 12px; padding: 0 4px;">
+      <sc-if value="{{ showControls }}" hint-placeholder-val="{{ true }}">
+      <div style="display: flex; align-items: center; gap: 12px;">
+      <div style="position: relative; display: flex; align-items: center; gap: 12px;" sc-camel-on-mouse-enter="{{ kTipOn }}" sc-camel-on-mouse-leave="{{ kTipOff }}" sc-camel-on-focus="{{ kTipOn }}" sc-camel-on-blur="{{ kTipOff }}">
+      <label for="lda-k" aria-describedby="k-tip" style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Number of topics (K)</label>
+      <div style="display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg);">
+        <button sc-camel-on-click="{{ decK }}" aria-label="Fewer topics" style="width: 28px; height: 28px; border: 0; border-radius: 0.6rem; background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: 15px; cursor: pointer;" style-hover="color: var(--foreground);">−</button>
+        <input id="lda-k" type="text" inputmode="numeric" autocomplete="off" aria-label="Number of topics (K)" aria-describedby="k-tip" value="{{ k }}" sc-camel-on-change="{{ setK }}" sc-camel-on-blur="{{ commitK }}" sc-camel-on-key-down="{{ keyK }}" style="width: 44px; height: 28px; border: 0; outline: none; background: transparent; color: var(--foreground); font-family: var(--font-mono); font-size: 14px; text-align: center;">
+        <button sc-camel-on-click="{{ incK }}" aria-label="More topics" style="width: 28px; height: 28px; border: 0; border-radius: 0.6rem; background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: 15px; cursor: pointer;" style-hover="color: var(--foreground);">+</button>
+      </div>
+      <sc-if value="{{ kTip }}" hint-placeholder-val="{{ false }}">
+        <div id="k-tip" role="tooltip" style="position: absolute; top: calc(100% + 10px); left: 0; z-index: 45; width: 300px; box-sizing: border-box; padding: 14px 16px; border-radius: 1.25rem; border: 1px solid var(--glass-shell-border); background: color-mix(in oklab, var(--background) 70%, transparent); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); box-shadow: var(--shadow-lg); pointer-events: none; display: flex; flex-direction: column; gap: 10px; font-family: var(--font-body); animation: ldaTip .18s cubic-bezier(0.2,0.7,0.2,1);">
+          <span style="font-size: 14px; font-weight: 600; color: var(--foreground);">Dirichlet priors</span>
+          <ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.45; color: var(--muted);">
+            <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">α = {{ kTipAlpha }}</span> prior on each document's topic mix (θ); smaller means fewer topics per document</li>
+            <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">η = {{ kTipEta }}</span> prior on each topic's word distribution (β); smaller means more distinct topics</li>
+          </ul>
+          <span style="font-size: 12px; line-height: 1.45; color: var(--muted);">{{ kTipNote }}</span>
+        </div>
+      </sc-if>
+      </div>
+
+      <label for="lda-floor" style="margin-left: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Highlight floor</label>
+      <div style="display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg);">
+        <button sc-camel-on-click="{{ decF }}" aria-label="Lower highlight floor" style="width: 28px; height: 28px; border: 0; border-radius: 0.6rem; background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: 15px; cursor: pointer;" style-hover="color: var(--foreground);">−</button>
+        <input id="lda-floor" type="text" inputmode="decimal" autocomplete="off" aria-label="Highlight floor" title="Highlights words whose confidence is at least this value. Confidence rescales a word's top topic probability: 0 = no preference among the k topics, 1 = certain." value="{{ floor }}" sc-camel-on-change="{{ setF }}" sc-camel-on-blur="{{ commitF }}" sc-camel-on-key-down="{{ keyF }}" style="width: 52px; height: 28px; border: 0; outline: none; background: transparent; color: var(--foreground); font-family: var(--font-mono); font-size: 14px; text-align: center;">
+        <button sc-camel-on-click="{{ incF }}" aria-label="Raise highlight floor" style="width: 28px; height: 28px; border: 0; border-radius: 0.6rem; background: transparent; color: var(--muted); font-family: var(--font-mono); font-size: 15px; cursor: pointer;" style-hover="color: var(--foreground);">+</button>
+      </div>
+      <button type="button" sc-camel-on-click="{{ openStop }}" aria-haspopup="dialog" title="Edit the stopword list" style="margin-left: 8px; display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 12px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); color: var(--foreground); font-family: var(--font-body); font-size: 13px; cursor: pointer;" style-hover="opacity: .9;">
+        <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"></path><path d="M4 12h10"></path><path d="M4 17h6"></path><path d="m15 15 5 5"></path><path d="m20 15-5 5"></path></svg>
+        Stopwords <span style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">{{ stopCount }}</span>
+      </button>
+      </div>
+      </sc-if>
+      <div style="flex: 1; display: flex; justify-content: flex-end; align-items: center; gap: 10px; min-width: 0; padding-right: 4px;">
+        <sc-if value="{{ fitting }}" hint-placeholder-val="{{ false }}"><div style="width: 90px; height: 4px; border-radius: 9999px; background: var(--border); overflow: hidden;"><div style="height: 100%; width: {{ progressW }}; background: var(--foreground); transition: width .2s;"></div></div></sc-if>
+        <sc-if value="{{ undoOn }}" hint-placeholder-val="{{ false }}"><span style="display: flex; align-items: center; gap: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta); white-space: nowrap;"><span style="max-width: 220px; overflow: hidden; text-overflow: ellipsis;">Removed {{ undoName }}</span><button type="button" sc-camel-on-click="{{ undo }}" style="border: 0; padding: 0; background: none; color: var(--foreground); font: inherit; letter-spacing: inherit; text-transform: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border); cursor: pointer;">Undo</button><span style="color: var(--border);">·</span></span></sc-if>
+        <span style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: {{ statusColor }}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ status }}</span>
+      </div>
+      <div style="position: relative;" sc-camel-on-mouse-enter="{{ upTipOn }}" sc-camel-on-mouse-leave="{{ upTipOff }}">
+        <label aria-describedby="upload-tip" style="display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 14px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); color: var(--foreground); font-size: 13px; cursor: pointer;" style-hover="opacity: .9;">
+          <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M17 8l-5-5-5 5"></path><path d="M12 3v12"></path></svg>
+          Upload
+          <input sc-camel-on-focus="{{ upTipOn }}" sc-camel-on-blur="{{ upTipOff }}" type="file" multiple="multiple" accept=".txt,.md,.csv,.zip,text/plain,application/zip" sc-camel-on-change="{{ upload }}" style="display: none;">
+        </label>
+        <sc-if value="{{ upTip }}" hint-placeholder-val="{{ false }}">
+          <div id="upload-tip" role="tooltip" style="position: absolute; top: calc(100% + 10px); left: 50%; margin-left: -150px; z-index: 45; width: 300px; box-sizing: border-box; padding: 14px 16px; border-radius: 1.25rem; border: 1px solid var(--glass-shell-border); background: color-mix(in oklab, var(--background) 70%, transparent); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); box-shadow: var(--shadow-lg); pointer-events: none; display: flex; flex-direction: column; gap: 10px; font-family: var(--font-body); animation: ldaTip .18s cubic-bezier(0.2,0.7,0.2,1);">
+            <span style="font-size: 14px; font-weight: 600; color: var(--foreground);">Supported file types</span>
+            <ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.45; color: var(--muted);">
+              <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">.txt</span> plain text, one document per file</li>
+              <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">.md</span>, <span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">.csv</span> read as plain text</li>
+              <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">.zip</span> a folder of any of the above</li>
+            </ul>
+          </div>
+        </sc-if>
+      </div>
+      <div style="position: relative;" sc-camel-on-mouse-enter="{{ imTipOn }}" sc-camel-on-mouse-leave="{{ imTipOff }}">
+        <button type="button" aria-describedby="import-tip" sc-camel-on-focus="{{ imTipOn }}" sc-camel-on-blur="{{ imTipOff }}" sc-camel-on-click="{{ openImport }}" aria-haspopup="dialog" style="font-family: var(--font-body); display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 14px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); color: var(--foreground); font-size: 13px; cursor: pointer;" style-hover="opacity: .9;">
+          <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"></path><path d="M8 11l4 4 4-4"></path><path d="M20 21H4"></path></svg>
+          Import model
+        </button>
+        <sc-if value="{{ imTip }}" hint-placeholder-val="{{ false }}">
+          <div id="import-tip" role="tooltip" style="position: absolute; top: calc(100% + 10px); left: 50%; margin-left: -150px; z-index: 45; width: 300px; box-sizing: border-box; padding: 14px 16px; border-radius: 1.25rem; border: 1px solid var(--glass-shell-border); background: color-mix(in oklab, var(--background) 70%, transparent); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); box-shadow: var(--shadow-lg); pointer-events: none; display: flex; flex-direction: column; gap: 10px; font-family: var(--font-body); animation: ldaTip .18s cubic-bezier(0.2,0.7,0.2,1);">
+            <span style="font-size: 14px; font-weight: 600; color: var(--foreground);">Supported file types</span>
+            <ul style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13px; line-height: 1.45; color: var(--muted);">
+              <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">.json</span> a model exported from R or Python</li>
+              <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">.txt</span> its texts, if they aren't in the JSON</li>
+              <li><span style="font-family: var(--font-mono); font-size: 12px; color: var(--foreground);">.zip</span> the JSON and its texts together</li>
+            </ul>
+          </div>
+        </sc-if>
+      </div>
+      <div data-export-menu="1" style="position: relative;">
+        <button sc-camel-on-click="{{ toggleExport }}" aria-haspopup="menu" aria-expanded="{{ exportOpen }}" style="display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 12px 0 14px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); color: var(--foreground); font-family: var(--font-body); font-size: 13px; cursor: {{ exportCursor }}; opacity: {{ exportOp }};" style-hover="opacity: .9;">
+        <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="M7 10l5 5 5-5"></path><path d="M12 15V3"></path></svg>
+          Export
+          <svg width="12" height="12" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted);"><path d="M6 9l6 6 6-6"></path></svg>
+        </button>
+        <sc-if value="{{ exportOpen }}" hint-placeholder-val="{{ false }}">
+          <div role="menu" style="position: absolute; right: 0; top: calc(100% + 8px); z-index: 40; width: 280px; box-sizing: border-box; border-radius: 1.25rem; padding: 6px; border: 1px solid var(--glass-shell-border); background: color-mix(in oklab, var(--background) 70%, transparent); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); box-shadow: var(--shadow-lg); animation: ldaTip .18s cubic-bezier(0.2,0.7,0.2,1);">
+            <sc-for list="{{ exportItems }}" as="it" hint-placeholder-count="4">
+              <button role="menuitem" sc-camel-on-click="{{ it.run }}" style="width: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 9px 12px; border: 0; border-radius: 0.8rem; background: transparent; color: var(--foreground); font-family: var(--font-body); text-align: left; cursor: pointer;" style-hover="background: color-mix(in oklab, var(--foreground) 7%, transparent);">
+                <span style="font-size: 14px;">{{ it.label }} <span style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">{{ it.ext }}</span></span>
+                <span style="font-size: 12px; color: var(--muted);">{{ it.hint }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+      <a href="https://github.com/WhyDoCatsExplode/LDA-visualizer" target="_blank" rel="noopener" title="View the source on GitHub" style="display: flex; align-items: center; gap: 8px; height: 34px; box-sizing: border-box; padding: 0 6px; color: var(--muted); font-size: 13px; text-decoration: none;" style-hover="color: var(--foreground);">
+        <svg width="14" height="14" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-5-4"></path></svg>
+        GitHub
+      </a>
+    </div>
+    <div style="display: flex; gap: 24px; align-items: stretch;">
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 0 4px;">
+      <div style="display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 1.0625rem; font-weight: 500;">
+        <span sc-camel-on-click="{{ back }}" title="Back to documents" style="cursor: {{ backCursor }}; color: {{ docsColor }}; transition: color .2s;">Documents</span>
+        <sc-if value="{{ isDrill }}" hint-placeholder-val="{{ false }}"><span style="color: var(--muted); font-weight: 400;">/</span><span title="{{ docName }}" style="min-width: 0; max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ docName }}</span></sc-if>
+      </div>
+      <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}"><div style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">{{ fileCount }} files · {{ overviewHint }}</div></sc-if>
+      <sc-if value="{{ isDrill }}" hint-placeholder-val="{{ false }}"><div style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">{{ docWords }} words · esc to exit</div></sc-if>
+    </div>
+
+    <div style="flex: 1; min-height: 420px; position: relative; display: flex; flex-direction: column; border-radius: 1.5rem; padding: 12px; border: 1px solid {{ dropBorder }}; background: var(--glass-shell-bg); backdrop-filter: blur(24px) saturate(1.5); box-shadow: 0 8px 32px rgb(0 0 0 / .10); transition: border-color .2s;">
+      <div style="position: absolute; inset: 12px; overflow-y: auto; overflow-x: hidden; border-radius: 1rem; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+      <sc-if value="{{ isDrill }}" hint-placeholder-val="{{ false }}">
+      <div ref="{{ rootRef }}" style="flex: 1 0 auto; position: relative; border-radius: 1rem; background: var(--glass-panel-bg); padding: 28px 32px 32px; display: grid; grid-template-columns: minmax(0, max-content) minmax(16px, 1fr) 26px minmax(40px, 96px) {{ histCol }}; column-gap: 0; align-items: stretch; align-content: start;">
+
+        <div style="min-width: 0; display: flex; flex-direction: column;">
+          <div style="font-size: 1.0625rem; font-weight: 500; margin-bottom: 18px;">{{ docPre }}<em style="font-family: var(--font-accent); font-weight: 400; font-size: 1.15em;">{{ docEm }}</em></div>
+          <sc-for list="{{ lines }}" as="line" hint-placeholder-count="24">
+            <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 16px; line-height: 31px; min-height: 31px; color: var(--muted); padding-left: {{ line.indent }};">
+              <sc-for list="{{ line.segs }}" as="seg" hint-placeholder-count="2">
+                <span data-word="{{ seg.idx }}" sc-camel-on-mouse-enter="{{ seg.enter }}" sc-camel-on-mouse-leave="{{ seg.leave }}" style="color: {{ seg.color }}; background: {{ seg.bg }}; box-shadow: 0 0 0 3px {{ seg.bg }}, inset 0 -1px 0 {{ seg.line }}; border-radius: 4px; opacity: {{ seg.op }}; transition: background .35s, box-shadow .35s, color .35s, opacity .2s;">{{ seg.text }}</span>
+              </sc-for>
+            </div>
+          </sc-for>
+          <sc-if value="{{ hasMore }}" hint-placeholder-val="{{ false }}">
+            <button sc-camel-on-click="{{ showMore }}" style="align-self: flex-start; margin-top: 18px; height: 34px; box-sizing: border-box; padding: 0 14px; border-radius: 0.75rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); color: var(--foreground); font-family: var(--font-body); font-size: 13px; cursor: pointer;" style-hover="opacity: .9;">Show more · {{ moreCount }} lines left</button>
+          </sc-if>
+        </div>
+
+        <div></div>
+
+        <div data-dotcol="1" style="position: relative;">
+          <sc-for list="{{ dots }}" as="d" hint-placeholder-count="14">
+            <div data-dot="{{ d.idx }}" sc-camel-on-mouse-enter="{{ d.enter }}" sc-camel-on-mouse-leave="{{ d.leave }}" style="position: absolute; left: 6px; top: {{ d.y }}; visibility: {{ d.vis }}; width: 14px; height: 14px; border-radius: 9999px; background: {{ d.color }}; opacity: {{ d.op }}; transform: scale({{ d.scale }}); transition: opacity .7s cubic-bezier(0.2,0.7,0.2,1), transform .7s cubic-bezier(0.2,0.7,0.2,1); cursor: default;"></div>
+          </sc-for>
+        </div>
+
+        <div style="display: flex; justify-content: center;"><div style="width: 0; height: 100%; border-left: 1px dashed var(--border);"></div></div>
+
+        <div style="align-self: start; position: sticky; top: 16px; display: flex; align-items: center;">
+          <div data-hist="1" style="position: relative; width: {{ histW }}; height: 360px; box-sizing: border-box; border: 1px solid var(--border); border-radius: 1rem; padding: 34px 14px 0; display: flex; align-items: flex-end; justify-content: space-between; gap: {{ barGap }};">
+            <div style="position: absolute; left: 14px; right: 14px; top: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><span class="lda-sym">{{ histSym }}</span>{{ histTitle }}</div>
+            <sc-for list="{{ bars }}" as="b" hint-placeholder-count="3">
+              <div sc-camel-on-mouse-enter="{{ b.enter }}" sc-camel-on-mouse-leave="{{ b.leave }}" style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 6px; opacity: {{ b.op }}; transition: opacity .2s;">
+                <div style="font-family: var(--font-mono); font-size: 10px; color: var(--muted); white-space: nowrap;">{{ b.label }}</div>
+                <div style="width: 100%; height: {{ b.h }}; background: {{ b.fill }}; border-top: 2px solid {{ b.color }}; box-sizing: border-box; border-radius: 3px 3px 0 0; transition: height .6s cubic-bezier(0.2,0.7,0.2,1);"></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <svg width="{{ geoW }}" height="{{ geoH }}" style="position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible;">
+          <defs>
+            <marker id="lda-arrow" sc-camel-view-box="0 0 10 10" sc-camel-ref-x="9" sc-camel-ref-y="5" sc-camel-marker-width="7" sc-camel-marker-height="7" orient="auto-start-reverse">
+              <path d="M0 0 L10 5 L0 10 Z" style="fill: var(--foreground);"></path>
+            </marker>
+          </defs>
+          <sc-for list="{{ arrows }}" as="a" hint-placeholder-count="0">
+            <path d="{{ a.d }}" style="fill: none; stroke: var(--foreground); stroke-width: 1; marker-end: url(#lda-arrow); stroke-dasharray: {{ a.len }}; stroke-dashoffset: {{ a.off }}; opacity: {{ a.op }}; transition: stroke-dashoffset .7s cubic-bezier(0.2,0.7,0.2,1) {{ a.delay }}, opacity .25s;"></path>
+          </sc-for>
+        </svg>
+      </div>
+      </sc-if>
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="flex: 1 0 auto; border-radius: 1rem; background: var(--glass-panel-bg); padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center;">
+        <svg width="28" height="28" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted);"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M12 18v-6"></path><path d="M9 15l3-3 3 3"></path></svg>
+        <div style="font-family: var(--font-accent); font-style: italic; font-size: 28px; line-height: 1.1;">Drop a corpus here</div>
+        <div style="max-width: 440px; font-size: 14px; line-height: 1.6; color: var(--muted);">Upload plain-text files (or a .zip of them), one document per file.</div>
+        <div style="margin-top: 6px; font-size: 13px; color: var(--muted);">Already fitted in R or Python? <button type="button" sc-camel-on-click="{{ openImport }}" style="border: 0; padding: 0; background: none; color: var(--foreground); font: inherit; text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--border); cursor: pointer;">Import the model</button></div>
+      </div>
+      </sc-if>
+      <sc-if value="{{ isOverview }}" hint-placeholder-val="{{ true }}">
+      <div style="flex: 1 0 auto; border-radius: 1rem; background: var(--glass-panel-bg); padding: 20px 20px 24px; display: flex; flex-direction: column; gap: 4px;">
+        <div style="display: grid; grid-template-columns: 20px minmax(0, 1.1fr) 80px minmax(0, 2fr) 130px 44px; column-gap: 18px; align-items: center; padding: 0 12px 12px; margin-bottom: 6px; border-bottom: 1px solid var(--border); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">
+          <span></span><span>Name</span><span style="text-align: right;">Words</span><span>Topic mixture · <span class="lda-sym">θ</span></span><span>Dominant</span><span></span>
+        </div>
+        <sc-for list="{{ files }}" as="f" hint-placeholder-count="12">
+          <div sc-camel-on-click="{{ f.open }}" sc-camel-on-mouse-enter="{{ f.enter }}" sc-camel-on-mouse-leave="{{ f.leave }}" style="display: grid; grid-template-columns: 20px minmax(0, 1.1fr) 80px minmax(0, 2fr) 130px 44px; column-gap: 18px; align-items: center; padding: 11px 12px; border-radius: 0.75rem; cursor: {{ f.cursor }}; opacity: {{ f.op }}; transition: opacity .2s, background .2s;" style-hover="background: color-mix(in oklab, var(--foreground) 5%, transparent);">
+            <svg width="16" height="16" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--muted);"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"></path><path d="M14 2v4a2 2 0 0 0 2 2h4"></path><path d="M10 13H8"></path><path d="M16 17H8"></path><path d="M16 13h-2"></path></svg>
+            <span title="{{ f.name }}" style="font-size: 15px; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ f.name }}</span>
+            <span style="font-family: var(--font-mono); font-size: 13px; color: var(--muted); text-align: right;">{{ f.words }}</span>
+            <div style="height: 8px; border-radius: 9999px; overflow: hidden; display: flex; gap: 1px; background: var(--border);">
+              <sc-for list="{{ f.segs }}" as="s" hint-placeholder-count="4">
+                <div style="width: {{ s.w }}; background: {{ s.color }}; opacity: {{ s.op }}; transition: width .5s cubic-bezier(0.2,0.7,0.2,1), opacity .2s;"></div>
+              </sc-for>
+            </div>
+            <span style="display: flex; align-items: center; gap: 8px; min-width: 0;"><span style="width: 7px; height: 7px; flex-shrink: 0; border-radius: 9999px; background: {{ f.domColor }};"></span><span style="min-width: 0; font-family: var(--font-accent); font-style: italic; font-size: 16px; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ f.domGloss }}</span><span style="font-family: var(--font-mono); font-size: 12px; color: var(--muted);">{{ f.domPct }}</span></span>
+            <span style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+              <button type="button" sc-camel-on-click="{{ f.remove }}" sc-camel-on-focus="{{ f.enter }}" sc-camel-on-blur="{{ f.leave }}" aria-label="{{ f.removeLabel }}" title="Remove from corpus" style="width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; padding: 0; border: 0; border-radius: 0.5rem; background: transparent; color: var(--muted); cursor: pointer; opacity: {{ f.removeOp }}; transition: opacity .15s, color .15s, background .15s;" style-hover="color: var(--status-busy); background: color-mix(in oklab, var(--status-busy) 12%, transparent);"><svg width="13" height="13" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg></button>
+              <span style="width: 8px; color: var(--muted); font-size: 16px;">{{ f.chev }}</span>
+            </span>
+          </div>
+        </sc-for>
+      </div>
+      </sc-if>
+      </div>
+    </div>
+    </div>
+
+    <div style="width: 470px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 0 4px;">
+        <div style="font-size: 1.0625rem; font-weight: 500;">Intertopic distance map</div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">{{ mapScope }}</div>
+      </div>
+      <div style="display: flex; border-radius: 1.5rem; padding: 12px; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); backdrop-filter: blur(24px) saturate(1.5); box-shadow: 0 8px 32px rgb(0 0 0 / .10);">
+        <div style="width: 100%; aspect-ratio: 1 / 1; position: relative; border-radius: 1rem; background: var(--glass-panel-bg); overflow: hidden;">
+          <div data-map-settings="1" style="position: absolute; top: 12px; right: 12px; z-index: 5; display: flex; flex-direction: column; align-items: flex-end; gap: 8px;">
+            <button type="button" sc-camel-on-click="{{ toggleMapSettings }}" aria-label="Map settings" title="Map settings" aria-haspopup="true" aria-expanded="{{ mapSettingsOpen }}" style="width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; padding: 0; border-radius: 0.6rem; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); color: {{ gearColor }}; cursor: pointer; transition: color .2s, transform .4s cubic-bezier(0.2,0.7,0.2,1); transform: rotate({{ gearTurn }});" style-hover="color: var(--foreground);"><svg width="15" height="15" sc-camel-view-box="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg></button>
+            <sc-if value="{{ mapSettingsOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="width: 250px; box-sizing: border-box; padding: 6px; border-radius: 1.1rem; border: 1px solid var(--glass-shell-border); background: color-mix(in oklab, var(--background) 70%, transparent); backdrop-filter: blur(24px) saturate(1.5); -webkit-backdrop-filter: blur(24px) saturate(1.5); box-shadow: var(--shadow-lg); animation: ldaTip .18s cubic-bezier(0.2,0.7,0.2,1);">
+                <div style="padding: 8px 10px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Map settings</div>
+                <button type="button" role="switch" aria-checked="{{ legendChecked }}" sc-camel-on-click="{{ toggleLegend }}" style="width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 10px; border: 0; border-radius: 0.75rem; background: transparent; color: var(--foreground); font-family: var(--font-body); font-size: 14px; text-align: left; cursor: pointer;" style-hover="background: color-mix(in oklab, var(--foreground) 7%, transparent);">
+                  <span>Marginal topic distribution</span>
+                  <span style="flex-shrink: 0; position: relative; width: 32px; height: 18px; border-radius: 9999px; background: {{ switchTrack }}; transition: background .2s;"><span style="position: absolute; top: 2px; left: {{ switchKnob }}; width: 14px; height: 14px; border-radius: 9999px; background: {{ switchKnobBg }}; box-shadow: 0 1px 3px rgb(0 0 0 / .25); transition: left .2s cubic-bezier(0.2,0.7,0.2,1);"></span></span>
+                </button>
+              </div>
+            </sc-if>
+          </div>
+          <div style="position: absolute; left: 24px; right: 24px; top: 42%; height: 1px; background: var(--border);"></div>
+          <div style="position: absolute; top: 24px; bottom: 24px; left: 50%; width: 1px; background: var(--border);"></div>
+          <div style="position: absolute; left: 26px; top: calc(42% - 20px); font-family: var(--font-mono); font-size: 11px; color: var(--muted);">PC1</div>
+          <div style="position: absolute; left: calc(50% + 8px); top: 24px; font-family: var(--font-mono); font-size: 11px; color: var(--muted);">PC2</div>
+          <sc-for list="{{ mapTopics }}" as="c" hint-placeholder-count="0">
+            <div sc-camel-on-mouse-enter="{{ c.enter }}" sc-camel-on-mouse-leave="{{ c.leave }}" title="{{ c.title }}" style="position: absolute; left: {{ c.x }}; top: {{ c.y }}; width: {{ c.d }}; height: {{ c.d }}; transform: translate(-50%, -50%); box-sizing: border-box; border-radius: 9999px; background: {{ c.fill }}; border: 1px {{ c.border }} {{ c.color }}; opacity: {{ c.op }}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; cursor: default; transition: left .6s cubic-bezier(0.2,0.7,0.2,1), top .6s cubic-bezier(0.2,0.7,0.2,1), width .6s cubic-bezier(0.2,0.7,0.2,1), height .6s cubic-bezier(0.2,0.7,0.2,1), background .2s, opacity .2s;">
+              <span style="font-size: 13px; font-weight: 500; color: var(--foreground);">{{ c.num }}</span>
+              <span style="font-family: var(--font-mono); font-size: 11px; color: var(--foreground);">{{ c.pct }}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{ showLegend }}" hint-placeholder-val="{{ true }}">
+          <div style="position: absolute; left: 24px; bottom: 22px; display: flex; flex-direction: column; gap: 10px; pointer-events: none;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);">Marginal topic distribution</div>
+            <div style="position: relative; width: 170px; height: {{ legendH }};">
+              <sc-for list="{{ legend }}" as="g" hint-placeholder-count="3">
+                <div style="position: absolute; left: {{ g.left }}; bottom: 0; width: {{ g.d }}; height: {{ g.d }}; box-sizing: border-box; border: 1px dashed var(--muted); border-radius: 9999px;"></div>
+                <div style="position: absolute; left: {{ g.cx }}; right: 36px; top: {{ g.top }}; height: 1px; background: var(--border);"></div>
+                <div style="position: absolute; right: 0; top: {{ g.labelTop }}; font-family: var(--font-mono); font-size: 11px; color: var(--muted);">{{ g.label }}</div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ anyClamped }}" hint-placeholder-val="{{ false }}"><div style="max-width: 190px; font-size: 11px; line-height: 1.4; color: var(--muted);">Dashed outline: under {{ minPct }}, enlarged so it stays readable</div></sc-if>
+          </div>
+          </sc-if>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; padding: 12px 4px 0;">
+        <div style="font-size: 1.0625rem; font-weight: 500;">Topics</div>
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);"><span title="β = p(w | z): the probability of each word given this topic. The same in every document.">top {{ cardTerms }} words · <span class="lda-sym">β</span></span></div>
+      </div>
+      <div style="flex: 1; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 1fr; gap: 12px;">
+        <sc-for list="{{ topics }}" as="t" hint-placeholder-count="3">
+          <div role="button" tabindex="0" aria-label="{{ t.aria }}" sc-camel-on-click="{{ t.open }}" sc-camel-on-key-down="{{ t.key }}" sc-camel-on-mouse-enter="{{ t.enter }}" sc-camel-on-mouse-leave="{{ t.leave }}" style="min-width: 0; display: flex; flex-direction: column; box-sizing: border-box; opacity: {{ t.op }}; transition: opacity .2s, transform .2s cubic-bezier(0.2,0.7,0.2,1); cursor: pointer; outline: none; border-radius: 1.5rem; padding: 8px; border: 1px solid var(--glass-shell-border); background: var(--glass-shell-bg); backdrop-filter: blur(24px) saturate(1.5); box-shadow: 0 8px 24px rgb(0 0 0 / .06);" style-hover="transform: translateY(-2px);">
+            <div style="flex: 1; border-radius: 1rem; background: var(--glass-panel-bg); padding: 14px 16px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <span style="display: flex; align-items: center; gap: 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta); white-space: nowrap;"><span style="width: 7px; height: 7px; border-radius: 9999px; background: {{ t.color }};"></span>{{ t.name }}</span>
+                <span style="min-width: 0; font-family: var(--font-accent); font-style: italic; font-size: 16px; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ t.gloss }}</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <sc-for list="{{ t.words }}" as="w" hint-placeholder-count="4">
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 15px; line-height: 1.6;">
+                    <span style="min-width: 0; color: var(--foreground); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ w.word }}</span>
+                    <span style="font-family: var(--font-mono); font-size: 13px; color: var(--muted);">{{ w.p }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="margin-top: auto; padding-top: 8px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);"><span>{{ t.share }} of corpus</span><span>Details ›</span></div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    </div>
+  </div>
+</div>
+
+<script type="text/x-dc" data-dc-script="" data-props="{&quot;playOnLoad&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;arrowStyle&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;straight&quot;,&quot;curved&quot;],&quot;default&quot;:&quot;straight&quot;,&quot;tsType&quot;:&quot;'straight' | 'curved'&quot;},&quot;speed&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;normal&quot;,&quot;slow&quot;],&quot;default&quot;:&quot;normal&quot;,&quot;tsType&quot;:&quot;'normal' | 'slow'&quot;}}">
+// ─── Settings (mirrors LDA_Experiment_1.R) ───────────────────────────────────
+const K_MIN = 2, K_MAX = 20, K_DEFAULT = 5;   // k_value <- 5
+const SEED = 1;                               // control = list(seed = 1)
+const ITERATIONS = 500;                       // Gibbs sweeps
+const ALPHA_NUM = 50, ETA = 0.1;              // Gibbs priors: alpha = 50 / k, eta (topicmodels' delta) = 0.1
+const CARD_TERMS = 5;                         // words per topic card
+const TOP_TERMS = 30;                         // words in the topic detail modal
+const MODAL_DOCS = 10;                        // documents listed in the topic detail modal
+const LINES_PAGE = 300;                       // drill-down renders this many lines at a time
+const WRAP = 72;                              // drill-down line width, in characters
+
+// quanteda's stopwords("english") (Snowball list), plus every single letter: initials and
+// stray fragments ("W. J. Craig", "don t") otherwise surface as topic words.
+const DEFAULT_STOPWORDS = Object.freeze([...new Set(`i me my myself we our ours ourselves you your yours yourself yourselves he him his himself
+she her hers herself it its itself they them their theirs themselves what which who whom this that these those am is
+are was were be been being have has had having do does did doing would should could ought i'm you're he's she's it's
+we're they're i've you've we've they've i'd you'd he'd she'd we'd they'd i'll you'll he'll she'll we'll they'll isn't
+aren't wasn't weren't hasn't haven't hadn't doesn't don't didn't won't wouldn't shan't shouldn't can't cannot couldn't
+mustn't let's that's who's what's here's there's when's where's why's how's a an the and but if or because as until
+while of at by for with about against between into through during before after above below to from up down in out on
+off over under again further then once here there when where why how all any both each few more most other some such
+no nor not only own same so than too very will`.split(/\s+/).concat([...'abcdefghijklmnopqrstuvwxyz']))]);
+// The active list: editable in the Stopwords modal, saved per browser and in exported pages.
+let stopwords = new Set(DEFAULT_STOPWORDS);
+const sameAsDefault = list => list.length === DEFAULT_STOPWORDS.length && DEFAULT_STOPWORDS.every(w => list.includes(w));
+
+// Word tokens; hyphenated and apostrophe'd words stay whole (quanteda's default).
+const TOKEN_RE = /[\p{L}\p{N}]+(?:['’\-][\p{L}\p{N}]+)*/gu;
+const HAS_LETTER = /\p{L}/u;
+const normTok = t => t.toLowerCase().replace(/’/g, "'");
+
+const PALETTE = ['hsl(185 45% 55%)', 'hsl(350 50% 58%)', 'hsl(265 40% 58%)', 'hsl(35 60% 58%)', 'hsl(145 40% 55%)',
+  'hsl(310 40% 60%)', 'hsl(220 45% 60%)', 'hsl(200 50% 55%)', 'hsl(60 45% 55%)', 'hsl(20 55% 58%)'];
+const topicColor = i => PALETTE[i] || `hsl(${Math.round((i * 137.508) % 360)} 45% 58%)`;
+
+// ─── Preprocessing ───────────────────────────────────────────────────────────
+// Returns the model tokens (lower-cased, stopwords removed) and a word count
+// taken after punctuation/number/symbol removal but before stopwords.
+function preprocess(text) {
+  const s = text.replace(/\r?\n/g, ' ');
+  const tokens = []; let words = 0;
+  for (const m of s.matchAll(TOKEN_RE)) {
+    if (!HAS_LETTER.test(m[0])) continue;   // remove_numbers
+    words++;
+    const t = normTok(m[0]);
+    if (!stopwords.has(t)) tokens.push(t);
+  }
+  return { tokens, words };
+}
+
+// ─── LDA: collapsed Gibbs sampling ───────────────────────────────────────────
+// Priors follow topicmodels' Gibbs defaults: alpha = 50 / k, beta (delta) = 0.1.
+// Count matrices are word-major (w * K + k) so the inner loop stays in cache.
+function mulberry32(seed) {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6D2B79F5) | 0;
+    let t = Math.imul(s ^ (s >>> 15), 1 | s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+async function fitLDA(docs, K, { onProgress, isCancelled }) {
+  const alpha = ALPHA_NUM / K, beta = ETA, rnd = mulberry32(SEED);
+  const vocab = new Map(), terms = [];
+  const docW = docs.map(d => Int32Array.from(d.tokens, t => {
+    let id = vocab.get(t);
+    if (id === undefined) { id = terms.length; vocab.set(t, id); terms.push(t); }
+    return id;
+  }));
+  const D = docs.length, V = terms.length, Vb = V * beta;
+  if (!V) throw new Error('No words left after preprocessing');
+  const nwk = new Int32Array(V * K), nk = new Int32Array(K), ndk = new Int32Array(D * K);
+  const zs = docW.map(w => new Int32Array(w.length));
+  docW.forEach((w, d) => {
+    for (let i = 0; i < w.length; i++) {
+      const k = Math.floor(rnd() * K);
+      zs[d][i] = k; nwk[w[i] * K + k]++; nk[k]++; ndk[d * K + k]++;
+    }
+  });
+
+  const cum = new Float64Array(K), inv = new Float64Array(K);   // inv[k] = 1 / (n_k + V·beta)
+  for (let k = 0; k < K; k++) inv[k] = 1 / (nk[k] + Vb);
+  let tick = performance.now();
+  for (let it = 0; it < ITERATIONS; it++) {
+    for (let d = 0; d < D; d++) {
+      const w = docW[d], z = zs[d], o = d * K;
+      for (let i = 0; i < w.length; i++) {
+        const wo = w[i] * K; let k = z[i];
+        nwk[wo + k]--; ndk[o + k]--; inv[k] = 1 / (--nk[k] + Vb);
+        let tot = 0;
+        for (let j = 0; j < K; j++) { tot += (nwk[wo + j] + beta) * inv[j] * (ndk[o + j] + alpha); cum[j] = tot; }
+        const u = rnd() * tot;
+        k = 0; while (k < K - 1 && cum[k] < u) k++;
+        z[i] = k; nwk[wo + k]++; ndk[o + k]++; inv[k] = 1 / (++nk[k] + Vb);
+      }
+    }
+    if (performance.now() - tick > 30) {
+      if (isCancelled()) return null;
+      onProgress((it + 1) / ITERATIONS);
+      await new Promise(r => setTimeout(r));
+      tick = performance.now();
+    }
+  }
+  if (isCancelled()) return null;
+
+  // Order topics by corpus share (largest = Topic 1), like LDAvis.
+  const N = nk.reduce((a, b) => a + b, 0) || 1;
+  const order = [...Array(K).keys()].sort((a, b) => nk[b] - nk[a]);
+  const phi = new Float64Array(V * K);     // p(w | k), word-major
+  order.forEach((src, k) => { for (let w = 0; w < V; w++) phi[w * K + k] = (nwk[w * K + src] + beta) / (nk[src] + Vb); });
+  const theta = docW.map((w, d) => order.map(src => (ndk[d * K + src] + alpha) / (w.length + K * alpha)));
+  const share = order.map(src => nk[src] / N);
+  return assembleModel({ K, terms, phi, theta, share, N, lens: docW.map(w => w.length), source: 'browser' });
+}
+
+// Everything the UI needs from a fitted model: φ (word-major), θ, topic shares,
+// top words and map coordinates. Shared by in-browser fits and imported models.
+function assembleModel({ K, terms, phi, theta, share, N, lens, source }) {
+  const V = terms.length, vocab = new Map();
+  terms.forEach((t, w) => { const n = normTok(t); if (!vocab.has(n)) vocab.set(n, w); });
+  const topics = share.map((_, k) => {
+    const top = [];
+    for (let w = 0; w < V; w++) {
+      const p = phi[w * K + k];
+      if (top.length < TOP_TERMS || p > top[top.length - 1][1]) {
+        top.push([terms[w], p]); top.sort((a, b) => b[1] - a[1]);
+        if (top.length > TOP_TERMS) top.pop();
+      }
+    }
+    return { id: 't' + k, name: 'Topic ' + (k + 1), gloss: top[0][0], color: topicColor(k), words: top };
+  });
+  return { K, V, N, D: theta.length, terms, vocab, phi, theta, share, lens, topics, source,
+    coords: topicCoords(phi, K, V), version: Math.random() };
+}
+
+// ─── Model files (R import + embeddable export) ──────────────────────────────
+// {
+//   "format": "lda-toolkit", "version": 1, "source": "R · topicmodels",
+//   "terms":  [V words],
+//   "phi":    [K rows × V]   p(word | topic)      ← posterior(lda)$terms
+//   "docs":   [D names],
+//   "theta":  [D rows × K]   p(topic | doc)       ← posterior(lda)$topics
+//   "tokens": [D]            optional: tokens per doc after preprocessing, weights topic shares
+//   "texts":  [D]            optional: original texts, enables the per-word drill-down
+//   "settings": { "floor", "showLegend", "title", "showControls",   optional (written by
+//                 "theme", "showThemeToggle", "showRibbon" }         interactive-page exports)
+// }
+const MODEL_FORMAT = 'lda-toolkit';
+
+// Export snippets shown in the import modal. The same code lives in
+// export_for_toolkit.R / export_for_toolkit.py next to this page's source.
+const SNIPPETS = [
+  { id: 'r', label: 'R · topicmodels', file: 'export_for_toolkit.R', note: 'lda_model = your LDA() result, document_dfm = the dfm it was fit on, document_list = the raw lines per file.', code: `library(jsonlite)
+
+post <- posterior(lda_model)
+write_json(list(
+  format = "lda-toolkit", version = 1, source = "R · topicmodels",
+  terms  = colnames(post$terms),
+  phi    = unname(post$terms),       # K × V: p(w | z), β in the article
+  docs   = rownames(post$topics),
+  theta  = unname(post$topics),      # D × K: topic mixtures (θ)
+  tokens = unname(ntoken(document_dfm)),
+  # optional, enables the per-word document view:
+  texts  = unname(sapply(document_list, paste, collapse = "\\n"))
+), "lda_model.json", auto_unbox = TRUE, digits = I(6))` },
+  { id: 'sklearn', label: 'Python · scikit-learn', file: 'export_for_toolkit.py', note: 'lda = LatentDirichletAllocation, X = the document-term matrix it was fit on.', code: `import json
+import numpy as np
+
+sig = lambda rows: [[float(f"{v:.6g}") for v in r] for r in rows]
+
+phi = lda.components_ / lda.components_.sum(axis=1, keepdims=True)
+theta = lda.transform(X)
+
+with open("lda_model.json", "w", encoding="utf-8") as f:
+    json.dump({
+        "format": "lda-toolkit", "version": 1, "source": "Python · scikit-learn",
+        "terms": vectorizer.get_feature_names_out().tolist(),
+        "phi": sig(phi),                  # k × V: p(word | topic)
+        "docs": list(names),
+        "theta": sig(theta),              # D × k: p(topic | doc)
+        "tokens": np.asarray(X.sum(axis=1)).ravel().astype(int).tolist(),
+        "texts": list(texts),             # optional: per-word document view
+    }, f, ensure_ascii=False)` },
+  { id: 'gensim', label: 'Python · gensim', file: 'export_for_toolkit.py', note: 'lda = LdaModel, corpus = the bag-of-words list it was trained on.', code: `import json
+
+sig = lambda rows: [[float(f"{v:.6g}") for v in r] for r in rows]
+
+theta = []
+for bow in corpus:   # dense rows: get_document_topics drops tiny topics
+    row = [0.0] * lda.num_topics
+    for k, p in lda.get_document_topics(bow, minimum_probability=0.0):
+        row[k] = float(p)
+    theta.append(row)
+
+with open("lda_model.json", "w", encoding="utf-8") as f:
+    json.dump({
+        "format": "lda-toolkit", "version": 1, "source": "Python · gensim",
+        "terms": [lda.id2word[i] for i in range(lda.num_terms)],
+        "phi": sig(lda.get_topics()),     # k × V: p(word | topic)
+        "docs": list(names),
+        "theta": sig(theta),              # D × k: p(topic | doc)
+        "tokens": [sum(c for _, c in bow) for bow in corpus],
+        "texts": list(texts),             # optional: per-word document view
+    }, f, ensure_ascii=False)` },
+];
+
+function parseModelFile(j, extraTexts) {
+  const fail = m => { throw new Error('Model file: ' + m); };
+  if (!j || j.format !== MODEL_FORMAT) fail('not an lda-toolkit JSON (missing "format": "lda-toolkit")');
+  const { terms, phi, docs, theta } = j;
+  if (!Array.isArray(terms) || !Array.isArray(phi) || !Array.isArray(docs) || !Array.isArray(theta)) fail('needs terms, phi, docs and theta arrays');
+  const K = phi.length, V = terms.length, D = docs.length;
+  if (K < 2) fail('needs at least 2 topics');
+  if (phi.some(r => !Array.isArray(r) || r.length !== V)) fail(`every phi row must have ${V} values (one per term)`);
+  if (theta.length !== D || theta.some(r => !Array.isArray(r) || r.length !== K)) fail(`theta must be ${D} rows × ${K} topics`);
+
+  const bad = rows => rows.some(r => r.some(v => typeof v !== 'number' || !isFinite(v) || v < 0));
+  if (bad(phi)) fail('phi has negative, missing or non-numeric values');
+  if (bad(theta)) fail('theta has negative, missing or non-numeric values');
+  // Rows should each sum to 1. Unnormalised weights (e.g. scikit-learn's raw
+  // components_) are fixed by renormalising, but say so.
+  const off = rows => rows.some(r => Math.abs(r.reduce((a, b) => a + b, 0) - 1) > .01);
+  const warnings = [];
+  if (off(phi)) warnings.push('phi rows didn\'t sum to 1');
+  if (off(theta)) warnings.push('theta rows didn\'t sum to 1');
+
+  const texts = docs.map((name, d) => (j.texts && typeof j.texts[d] === 'string') ? j.texts[d] : extraTexts.get(name) ?? null);
+  const files = docs.map((name, d) => {
+    const text = texts[d];
+    if (text != null) return { name, text, ...preprocess(text) };
+    return { name, text: null, tokens: null, words: Array.isArray(j.tokens) ? j.tokens[d] : null };
+  });
+  const lens = docs.map((_, d) => Array.isArray(j.tokens) && j.tokens[d] > 0 ? j.tokens[d] : files[d].tokens ? files[d].tokens.length : 1);
+
+  // Renormalise rows (JSON rounding) and lay φ out word-major like in-browser fits.
+  const phiWM = new Float64Array(V * K);
+  phi.forEach((row, k) => { const s = row.reduce((a, b) => a + (+b || 0), 0) || 1; row.forEach((v, w) => phiWM[w * K + k] = (+v || 0) / s); });
+  const th = theta.map(r => { const s = r.reduce((a, b) => a + (+b || 0), 0) || 1; return r.map(v => (+v || 0) / s); });
+  const N = lens.reduce((a, b) => a + b, 0);
+  const share = Array.from({ length: K }, (_, k) => th.reduce((a, r, d) => a + r[k] * lens[d], 0) / N);
+  const model = assembleModel({ K, terms: terms.map(String), phi: phiWM, theta: th, share, N, lens, source: String(j.source || 'imported') });
+  return { files, model, settings: j.settings || {}, warnings };
+}
+
+// Drop one document from a fitted model: its θ row goes and topic shares are
+// re-weighted over the documents that remain. Topic-word distributions stay.
+function dropDoc(model, i) {
+  const theta = model.theta.filter((_, d) => d !== i), lens = model.lens.filter((_, d) => d !== i);
+  const N = lens.reduce((a, b) => a + b, 0) || 1;
+  const share = model.share.map((_, k) => theta.reduce((a, r, d) => a + r[k] * lens[d], 0) / N);
+  return { ...model, theta, lens, share, N, D: theta.length, version: Math.random() };
+}
+
+function modelToJSON(model, files, settings) {
+  const r6 = v => +v.toPrecision(6);
+  return {
+    format: MODEL_FORMAT, version: 1, source: model.source === 'browser' ? 'browser · Gibbs' : model.source,
+    terms: model.terms,
+    phi: model.topics.map((_, k) => model.terms.map((_, w) => r6(model.phi[w * model.K + k]))),
+    docs: files.map(f => f.name),
+    theta: model.theta.map(r => r.map(r6)),
+    tokens: files.map(f => f.tokens ? f.tokens.length : null),
+    texts: files.map(f => f.text),
+    settings,
+  };
+}
+
+// ─── .zip support ────────────────────────────────────────────────────────────
+// Minimal reader: walks the central directory and inflates "stored" or
+// "deflate" entries with the browser's DecompressionStream. Only text and
+// model files are extracted; macOS metadata and hidden files are skipped.
+// Zip64 and encrypted archives are rejected with a clear message.
+const WANTED = /\.(txt|md|csv|json)$/i;
+async function unzip(file) {
+  const buf = new Uint8Array(await file.arrayBuffer()), dv = new DataView(buf.buffer);
+  const fail = m => { throw new Error(file.name + ': ' + m); };
+  let eocd = -1;
+  for (let i = buf.length - 22; i >= Math.max(0, buf.length - 65557); i--) if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  if (eocd < 0) fail('not a valid zip file');
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  if (p === 0xffffffff || count === 0xffff) fail('zip64 archives aren\'t supported; re-zip with a standard tool');
+  const entries = [], utf8 = new TextDecoder();
+  for (let n = 0; n < count; n++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) fail('the archive looks corrupted');
+    const flags = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true), size = dv.getUint32(p + 20, true);
+    const nameLen = dv.getUint16(p + 28, true), extraLen = dv.getUint16(p + 30, true), commentLen = dv.getUint16(p + 32, true);
+    const local = dv.getUint32(p + 42, true), path = utf8.decode(buf.subarray(p + 46, p + 46 + nameLen));
+    p += 46 + nameLen + extraLen + commentLen;
+    if (path.endsWith('/') || /(^|\/)(__MACOSX\/|\.)/.test(path) || !WANTED.test(path)) continue;
+    if (flags & 1) fail('encrypted zips aren\'t supported');
+    if (method !== 0 && method !== 8) fail(`"${path}" uses an unsupported compression method`);
+    const start = local + 30 + dv.getUint16(local + 26, true) + dv.getUint16(local + 28, true), raw = buf.subarray(start, start + size);
+    const data = method === 0 ? raw
+      : new Uint8Array(await new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).arrayBuffer());
+    entries.push({ path, data });
+  }
+  // Use bare file names unless two entries in different folders share one.
+  const base = e => e.path.split('/').pop(), seen = {};
+  entries.forEach(e => seen[base(e)] = (seen[base(e)] || 0) + 1);
+  return entries.map(e => new File([e.data], seen[base(e)] > 1 ? e.path : base(e), { type: /\.json$/i.test(e.path) ? 'application/json' : 'text/plain' }));
+}
+const isZip = f => /\.zip$/i.test(f.name) || /zip/.test(f.type);
+
+// Page title: *asterisks* mark the italic serif accent.
+const DEFAULT_TITLE = '*LDA* visualizer';
+const titleSegs = t => String(t).split(/(\*[^*]+\*)/).filter(Boolean).map(p => {
+  const em = /^\*[^*]+\*$/.test(p);
+  return { text: em ? p.slice(1, -1) : p, font: em ? 'var(--font-accent)' : 'inherit', style: em ? 'italic' : 'normal', weight: em ? 400 : 'inherit', size: em ? '1.15em' : 'inherit' };
+});
+const plainTitle = t => String(t).replace(/\*/g, '').trim();
+const escapeHTML = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+function download(name, content, type) {
+  const blob = content instanceof Blob ? content : new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+const csvCell = v => { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+const toCSV = rows => rows.map(r => r.map(csvCell).join(',')).join('\n');
+
+// ─── Intertopic distance map (LDAvis-style) ──────────────────────────────────
+// Jensen–Shannon divergence between topic-word distributions, then classical
+// MDS (PCoA) to two dimensions.
+function topicCoords(phi, K, V) {
+  const js = (a, b) => {
+    let s = 0;
+    for (let w = 0; w < V; w++) {
+      const p = phi[w * K + a], q = phi[w * K + b], m = (p + q) / 2;
+      s += p * Math.log(p / m) + q * Math.log(q / m);
+    }
+    return s / 2;
+  };
+  const D2 = Array.from({ length: K }, () => new Float64Array(K));
+  for (let a = 0; a < K; a++) for (let b = a + 1; b < K; b++) { const d = js(a, b); D2[a][b] = D2[b][a] = d * d; }
+  // Double-centre: B = -1/2 J D² J
+  const row = D2.map(r => r.reduce((x, y) => x + y, 0) / K), all = row.reduce((x, y) => x + y, 0) / K;
+  const B = D2.map((r, i) => Array.from(r, (v, j) => -0.5 * (v - row[i] - row[j] + all)));
+  const { values, vectors } = jacobiEigen(B);
+  const idx = [...values.keys()].sort((a, b) => values[b] - values[a]).slice(0, 2);
+  return Array.from({ length: K }, (_, i) => idx.map(e => values[e] > 0 ? vectors[i][e] * Math.sqrt(values[e]) : 0));
+}
+
+function jacobiEigen(M) {
+  const n = M.length, a = M.map(r => Array.from(r));
+  const v = Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => +(i === j)));
+  for (let sweep = 0; sweep < 100; sweep++) {
+    let off = 0;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) off += a[p][q] * a[p][q];
+    if (off < 1e-20) break;
+    for (let p = 0; p < n; p++) for (let q = p + 1; q < n; q++) {
+      if (Math.abs(a[p][q]) < 1e-18) continue;
+      const th = (a[q][q] - a[p][p]) / (2 * a[p][q]);
+      const t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th * th + 1));
+      const c = 1 / Math.sqrt(t * t + 1), s = t * c;
+      for (let k = 0; k < n; k++) { const kp = a[k][p], kq = a[k][q]; a[k][p] = c * kp - s * kq; a[k][q] = s * kp + c * kq; }
+      for (let k = 0; k < n; k++) { const pk = a[p][k], qk = a[q][k]; a[p][k] = c * pk - s * qk; a[q][k] = s * pk + c * qk; }
+      for (let k = 0; k < n; k++) { const kp = v[k][p], kq = v[k][q]; v[k][p] = c * kp - s * kq; v[k][q] = s * kp + c * kq; }
+    }
+  }
+  return { values: a.map((r, i) => r[i]), vectors: v };
+}
+
+// Circle area ∝ topic share: diameter = √share × MAP_SCALE px, with a floor so
+// small topics stay readable. The size legend uses the same formula.
+const MAP_SCALE = 210, MAP_MIN_D = 30, MAP_LEGEND = [.25, .10, .04];
+const circleD = p => Math.sqrt(p) * MAP_SCALE;
+
+// Map PCoA coordinates into the panel, keeping the axis crossing at (50%, 42%).
+function mapPositions(coords) {
+  const mx = Math.max(1e-9, ...coords.map(c => Math.abs(c[0]))), my = Math.max(1e-9, ...coords.map(c => Math.abs(c[1])));
+  const s = Math.min(32 / mx, 24 / my);
+  return coords.map(([x, y]) => [(50 + x * s).toFixed(2) + '%', (42 - y * s).toFixed(2) + '%']);
+}
+
+// ─── Drill-down document view ────────────────────────────────────────────────
+// Re-wraps the source text into short lines and tags every modelled token with
+// its posterior p(z | w, d) ∝ θ_dk · φ_kw. Each line gets one gutter dot showing
+// its dominant topic (argmax of the line's averaged posteriors).
+//
+// The highlight floor compares against a rescaled confidence,
+// (p − 1/k) / (1 − 1/k): 0 = no preference between topics, 1 = certain. Raw p
+// can never fall below 1/k, so an unscaled floor would be dead below that.
+const confidence = (p, K) => Math.max(0, (p - 1 / K) / (1 - 1 / K));
+function wrapText(text) {
+  const raw = text.replace(/\r\n?/g, '\n').split('\n');
+  const blanks = raw.filter(l => !l.trim()).length;
+  // Hard-wrapped files separate paragraphs with blank lines; otherwise treat
+  // every line as its own paragraph.
+  const paras = blanks >= raw.length / 20
+    ? text.replace(/\r\n?/g, '\n').split(/\n\s*\n/).map(p => p.replace(/\s+/g, ' ').trim())
+    : raw.map(l => l.replace(/\s+/g, ' ').trim());
+  const lines = [];
+  paras.filter(Boolean).forEach((p, pi) => {
+    if (pi) lines.push('');
+    let cur = '';
+    for (const word of p.split(' ')) {
+      if (cur && cur.length + 1 + word.length > WRAP) { lines.push(cur); cur = word; }
+      else cur = cur ? cur + ' ' + word : word;
+    }
+    if (cur) lines.push(cur);
+  });
+  return lines;
+}
+
+function buildDoc(file, di, model) {
+  const K = model.K, th = model.theta[di], post = new Map();
+  const posterior = wid => {
+    let p = post.get(wid);
+    if (!p) {
+      const r = th.map((t, k) => t * model.phi[wid * K + k]), s = r.reduce((a, b) => a + b, 0);
+      const probs = r.map(x => x / s), best = probs.indexOf(Math.max(...probs));
+      p = { probs, best, p: probs[best], conf: confidence(probs[best], K) };
+      post.set(wid, p);
+    }
+    return p;
+  };
+  let idx = 0;
+  const lines = wrapText(file.text).map((text, li) => {
+    const segs = [], toks = [], mix = new Float64Array(K); let last = 0, n = 0;
+    for (const m of text.matchAll(TOKEN_RE)) {
+      const wid = model.vocab.get(normTok(m[0]));
+      if (wid === undefined) continue;
+      if (m.index > last) segs.push({ text: text.slice(last, m.index) });
+      const ps = posterior(wid), tok = { text: m[0], idx: idx++, wid, topic: ps.best, conf: ps.conf };
+      segs.push(tok); toks.push(tok); last = m.index + m[0].length;
+      ps.probs.forEach((v, k) => mix[k] += v); n++;
+    }
+    if (last < text.length || !segs.length) segs.push({ text: text.slice(last) || ' ' });
+    if (!n) return { segs, anchor: null, mix: null };
+    const lineMix = Array.from(mix, v => v / n), dom = lineMix.indexOf(Math.max(...lineMix));
+    // The arrow points at the line's first word assigned to the dominant topic.
+    const at = toks.find(t => t.topic === dom) || toks[0];
+    return { segs, mix: lineMix, anchor: { idx: at.idx, line: li, topic: dom, conf: confidence(lineMix[dom], K) } };
+  });
+  return { name: file.name, lines, post, words: file.words };
+}
+
+// ─── Component ───────────────────────────────────────────────────────────────
+class Component extends DCLogic {
+  state = { floor: 0, k: K_DEFAULT, files: [], model: null, fitting: false, progress: 0, error: null,
+    doc: null, view: 'files', hoverFile: null, hover: null, step: 0, lineCap: LINES_PAGE, dragging: false,
+    geo: { arrows: [], w: 0, h: 0 } };
+  rootRef = React.createRef();
+  runId = 0;
+  docCache = null;
+
+  curDoc() {
+    const { model, doc, files } = this.state;
+    if (!model || doc == null || !files[doc] || files[doc].text == null) return null;
+    if (!this.docCache || this.docCache.model !== model || this.docCache.di !== doc)
+      this.docCache = { model, di: doc, data: buildDoc(files[doc], doc, model) };
+    return this.docCache.data;
+  }
+  visibleLines() { const D = this.curDoc(); return D ? D.lines.slice(0, this.state.lineCap) : []; }
+  anchors() { return this.visibleLines().map(l => l.anchor).filter(Boolean); }
+
+  componentDidMount() {
+    this.onKey = e => {
+      if (e.key !== 'Escape') return;
+      if (this.state.exportOpen) this.setState({ exportOpen: false });
+      else if (this.state.mapSettingsOpen) this.setState({ mapSettingsOpen: false });
+      else if (this.state.pageOpen) this.closePage();
+      else if (this.state.stopOpen) this.closeStop();
+      else if (this.state.importOpen) this.closeImport();
+      else if (this.state.modal != null) this.closeModal();
+      else if (this.state.view === 'doc') this.exitDoc();
+    };
+    const has = e => e.dataTransfer && [...e.dataTransfer.types].includes('Files');
+    this.onDragOver = e => { if (!has(e)) return; e.preventDefault(); if (!this.state.dragging) this.setState({ dragging: true }); };
+    this.onDragLeave = e => { if (!e.relatedTarget) this.setState({ dragging: false }); };
+    this.onDrop = e => { if (!has(e)) return; e.preventDefault(); this.setState({ dragging: false }); this.loadFiles(e.dataTransfer.files); };
+    window.addEventListener('keydown', this.onKey);
+    window.addEventListener('dragover', this.onDragOver);
+    window.addEventListener('dragleave', this.onDragLeave);
+    window.addEventListener('drop', this.onDrop);
+    this.onDocClick = e => {
+      if (this.state.exportOpen && !e.target.closest('[data-export-menu]')) this.setState({ exportOpen: false });
+      if (this.state.mapSettingsOpen && !e.target.closest('[data-map-settings]')) this.setState({ mapSettingsOpen: false });
+    };
+    try { const v = localStorage.getItem('lda-show-legend'); if (v != null) this.setState({ showLegend: v === '1' }); } catch (err) {}
+    window.addEventListener('click', this.onDocClick);
+    const snap = (window.__ldaSnapshot && window.__ldaSnapshot.settings) || {};
+    const themeLocked = snap.showThemeToggle === false;
+    let saved = /^(auto|light|dark)$/.test(snap.theme) ? snap.theme : 'auto';
+    if (!themeLocked) try { saved = localStorage.getItem('lda-theme') || saved; } catch (err) {}
+    this.setState({ theme: saved, themeLocked });
+    this.mq = matchMedia('(prefers-color-scheme: dark)');
+    this.onScheme = () => { if ((this.state.theme || 'auto') === 'auto') this.applyTheme('auto'); };
+    this.mq.addEventListener('change', this.onScheme);
+    this.ro = new ResizeObserver(() => { cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(() => this.measure()); });
+    this.ro.observe(document.body);
+    // An exported page carries its corpus + model; see the capture script build.py adds.
+    // Stopwords: an exported page's list wins, else this browser's saved list.
+    const snapStops = snap.stopwords;
+    if (Array.isArray(snapStops)) stopwords = new Set(snapStops.map(String));
+    else try { const v = JSON.parse(localStorage.getItem('lda-stopwords') || 'null'); if (Array.isArray(v)) stopwords = new Set(v); } catch (err) {}
+    this.setState({ stopCount: stopwords.size });
+    if (window.__ldaSnapshot) this.applyModelFile(window.__ldaSnapshot, new Map());
+  }
+  componentWillUnmount() {
+    window.removeEventListener('keydown', this.onKey);
+    window.removeEventListener('dragover', this.onDragOver);
+    window.removeEventListener('dragleave', this.onDragLeave);
+    window.removeEventListener('drop', this.onDrop);
+    window.removeEventListener('click', this.onDocClick);
+    this.mq && this.mq.removeEventListener('change', this.onScheme);
+    clearTimeout(this.fitTimer); this.runId++;
+    this.ro && this.ro.disconnect();
+  }
+  // The runtime only passes prevProps, so diff against a snapshot of state.
+  componentDidUpdate(prev) {
+    const s = this.state, ps = this.snap || {};
+    // Lock page scroll only while a modal is actually showing (a refit can remove its topic).
+    const locked = !!s.importOpen || !!s.pageOpen || !!s.stopOpen || (s.modal != null && !!s.model && s.modal < s.model.K);
+    if (locked !== this.locked) { this.locked = locked; document.body.style.overflow = locked ? 'hidden' : ''; }
+    this.snap = { model: s.model, doc: s.doc, view: s.view, lineCap: s.lineCap };
+    if (prev.arrowStyle !== this.props.arrowStyle) this.measure();
+    if (s.view === 'doc' && (ps.model !== s.model || ps.doc !== s.doc || ps.view !== s.view)) this.enterDoc();
+    else if (ps.lineCap !== s.lineCap) requestAnimationFrame(() => this.measure());
+  }
+
+  // Text files start an in-browser fit. A model .json (from R, or an exported
+  // page) is imported as-is; any .txt files dropped with it supply its texts.
+  // Remove one document. Browser fits refit (debounced, so several quick
+  // removals refit once) and show a stale interim model meanwhile; imported
+  // models just drop the document's θ row. Undo reverses the latest removal.
+  removeFile(i) {
+    const { files, model, k } = this.state;
+    const next = files.filter((_, d) => d !== i);
+    const refit = !!model && model.source === 'browser' && next.length > 0;
+    const interim = model && next.length ? { ...dropDoc(model, i), stale: refit } : null;
+    this.setState({ files: next, model: interim, hoverFile: null, hover: null, error: null,
+      undo: { name: files[i].name, prev: { files, model, k } } });
+    clearTimeout(this.undoTimer); this.undoTimer = setTimeout(() => this.setState({ undo: null }), 10000);
+    if (!next.length) { this.runId++; clearTimeout(this.fitTimer); this.setState({ fitting: false }); }
+    else if (refit || !model) this.scheduleFit();
+  }
+  undoRemove() {
+    const u = this.state.undo; if (!u) return;
+    this.runId++; clearTimeout(this.fitTimer); clearTimeout(this.undoTimer);
+    const { files, model, k } = u.prev;
+    this.setState({ files, model, k, fitting: false, error: null, undo: null },
+      () => { if (files.length && (!model || model.stale)) this.fit(); });
+  }
+
+  async loadFiles(list) {
+    let all = [...(list || [])];
+    if (all.some(isZip)) {
+      try { all = (await Promise.all(all.map(f => isZip(f) ? unzip(f) : [f]))).flat(); }
+      catch (err) { this.setState({ error: err.message }); return; }
+    }
+    const json = all.find(f => /\.json$/i.test(f.name));
+    const texts = all.filter(f => /\.(txt|md|csv)$/i.test(f.name) || /^text\/(plain|markdown|csv)/.test(f.type));
+    if (json) {
+      const extra = new Map(await Promise.all(texts.map(async f => [f.name, await f.text()])));
+      try { this.applyModelFile(JSON.parse(await json.text()), extra); }
+      catch (err) { this.setState({ error: err instanceof SyntaxError ? 'Model file: not valid JSON' : err.message }); }
+      return;
+    }
+    if (!texts.length) { this.setState({ error: 'Nothing to load: expected .txt files, a .zip of them, or a model .json' }); return; }
+    const files = (await Promise.all(texts.map(async f => {
+      const text = await f.text();
+      return { name: f.name, text, ...preprocess(text) };
+    }))).sort((a, b) => a.name.localeCompare(b.name));   // list.files() order
+    this.exitDoc();
+    this.setState({ files, model: null, hoverFile: null, hover: null, error: null, importOpen: false, undo: null }, () => this.fit());
+  }
+  applyModelFile(json, extraTexts) {
+    const { files, model, settings, warnings } = parseModelFile(json, extraTexts);
+    this.flashNote(warnings.length ? 'Imported · ' + warnings.join(', ') + ', so they were renormalised' : null, 8000);
+    this.setState({ importOpen: false });
+    this.runId++; clearTimeout(this.fitTimer);
+    this.exitDoc();
+    const floor = typeof settings.floor === 'number' ? Math.max(0, Math.min(.99, settings.floor)) : this.state.floor;
+    if (typeof settings.showLegend === 'boolean') this.setState({ showLegend: settings.showLegend });
+    if (typeof settings.title === 'string' && settings.title.trim()) {
+      this.setState({ pageTitle: settings.title });
+      document.title = plainTitle(settings.title);
+    }
+    if (typeof settings.showControls === 'boolean') this.setState({ showControls: settings.showControls });
+    if (typeof settings.showRibbon === 'boolean') this.setState({ showRibbon: settings.showRibbon });
+    this.setState({ files, model, k: model.K, kText: undefined, floor, floorText: undefined, fitting: false,
+      progress: 1, hoverFile: null, hover: null, modal: null, error: null, undo: null });
+  }
+
+  scheduleFit() { clearTimeout(this.fitTimer); this.fitTimer = setTimeout(() => this.fit(), 450); }
+  async fit() {
+    const { files } = this.state, K = +this.state.k || K_DEFAULT, run = ++this.runId;
+    if (!files.length) return;
+    this.setState({ fitting: true, progress: 0, error: null });
+    try {
+      const model = await fitLDA(files, K, {
+        onProgress: p => run === this.runId && this.setState({ progress: p }),
+        isCancelled: () => run !== this.runId,
+      });
+      if (!model || run !== this.runId) return;
+      this.setState({ model, fitting: false, progress: 1, hover: null });
+    } catch (err) {
+      if (run === this.runId) this.setState({ fitting: false, error: err.message || String(err) });
+    }
+  }
+  setK_(k) {
+    this.setState({ kText: undefined });
+    if (k === this.state.k) return;
+    if (this.state.files.some(f => !f.tokens)) {
+      this.setState({ error: 'This model was imported without texts, so it can\'t be refit at a new k' });
+      return;
+    }
+    this.setState({ k }, () => this.scheduleFit());
+  }
+  stepK(d) { this.setK_(Math.max(K_MIN, Math.min(K_MAX, (+this.state.k || K_DEFAULT) + d))); }
+  commitK() {
+    const v = parseInt(this.state.kText, 10);
+    if (isNaN(v)) this.setState({ kText: undefined }); else this.setK_(Math.max(K_MIN, Math.min(K_MAX, v)));
+  }
+  stepF(d) { this.setState(s => ({ floorText: undefined, floor: Math.max(0, Math.min(.99, Math.round((s.floor + d * .01) * 100) / 100)) })); }
+  stepKey(e, up, down, enter) {
+    if (e.key === 'ArrowUp') { e.preventDefault(); up(); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); down(); }
+    else if (e.key === 'Enter') { enter(); e.target.blur(); }
+  }
+
+  enterDoc() {
+    this.geoKey = null;
+    (document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(() => setTimeout(() => {
+      if (this.rootRef.current) this.ro.observe(this.rootRef.current);
+      this.setState({ step: 0, geo: { arrows: [], w: 0, h: 0 } }, () => {
+        this.measure();
+        requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ step: this.anchors().length })));
+      });
+    }, 60));
+  }
+  // Theme: 'auto' follows the OS; the choice persists per browser. The circular
+  // reveal (from the design system's ThemeToggle) grows from the clicked swatch.
+  applyTheme(mode) {
+    const dark = mode === 'dark' || (mode === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark', dark);
+  }
+  selectTheme(mode, e) {
+    try { localStorage.setItem('lda-theme', mode); } catch (err) {}
+    const root = document.documentElement, b = e.currentTarget.getBoundingClientRect();
+    const x = b.left + b.width / 2, y = b.top + b.height / 2;
+    root.style.setProperty('--vt-x', x + 'px');
+    root.style.setProperty('--vt-y', y + 'px');
+    root.style.setProperty('--vt-r', Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 'px');
+    const apply = () => { this.applyTheme(mode); this.setState({ theme: mode }); };
+    if (document.startViewTransition) {
+      root.classList.add('view-transition-active');
+      document.startViewTransition(apply).finished.finally(() => root.classList.remove('view-transition-active'));
+    } else apply();
+  }
+
+  exportTo(kind) {
+    const { model, files } = this.state;
+    this.setState({ exportOpen: false });
+    if (!model) return;
+    const topics = model.topics, stem = 'lda-k' + model.K;
+    if (kind === 'theta') {
+      const rows = [['document', 'words', ...topics.map(t => t.name + ' (' + t.gloss + ')')]];
+      files.forEach((f, i) => rows.push([f.name, f.words ?? '', ...model.theta[i].map(v => v.toFixed(4))]));
+      download(stem + '-document-topics.csv', toCSV(rows), 'text/csv');
+    } else if (kind === 'terms') {
+      const rows = [['topic', 'label', 'rank', 'word', 'p_word_given_topic']];
+      topics.forEach(t => t.words.forEach(([w, p], i) => rows.push([t.name, t.gloss, i + 1, w, p.toPrecision(6)])));
+      download(stem + '-topic-words.csv', toCSV(rows), 'text/csv');
+    } else if (kind === 'json') {
+      download(stem + '-model.json', JSON.stringify(modelToJSON(model, files, { floor: this.state.floor, showLegend: this.state.showLegend !== false })), 'application/json');
+    } else if (kind === 'page') {
+      this.openPage();
+    }
+  }
+
+  // Stopword editor: edits a draft; Apply re-preprocesses every text and refits.
+  openStop() {
+    this.lastFocus = document.activeElement;
+    this.setState({ stopOpen: true, stopIn: false, stopDraft: [...stopwords].sort(), stopInput: '', exportOpen: false, tip: null },
+      () => requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ stopIn: true }))));
+  }
+  closeStop() {
+    this.setState({ stopOpen: false, stopIn: false });
+    if (this.lastFocus && this.lastFocus.focus) this.lastFocus.focus();
+  }
+  addStopwords() {
+    const words = (this.state.stopInput || '').split(/[\s,]+/).map(normTok).filter(Boolean);
+    if (!words.length) return;
+    this.setState(s => ({ stopDraft: [...new Set([...s.stopDraft, ...words])].sort(), stopInput: '' }));
+  }
+  applyStopwords() {
+    const list = this.state.stopDraft;
+    stopwords = new Set(list);
+    try { sameAsDefault(list) ? localStorage.removeItem('lda-stopwords') : localStorage.setItem('lda-stopwords', JSON.stringify(list)); } catch (err) {}
+    const { model } = this.state;
+    const files = this.state.files.map(f => f.text != null ? { ...f, ...preprocess(f.text) } : f);
+    const refit = files.length > 0 && files.every(f => f.tokens) && (!model || model.source === 'browser');
+    this.setState({ files, stopCount: stopwords.size, undo: null });
+    this.closeStop();
+    if (refit) this.fit();
+  }
+
+  // Export › Interactive page: a modal to set the exported page's title,
+  // controls and theme before downloading.
+  openPage() {
+    this.lastFocus = document.activeElement;
+    const s = this.state;
+    this.setState({ pageOpen: true, pageIn: false, exportOpen: false, tip: null,
+      draft: { title: s.pageTitle || DEFAULT_TITLE, showControls: s.showControls !== false, theme: s.theme || 'auto', showThemeToggle: !s.themeLocked, showRibbon: s.showRibbon !== false } },
+      () => requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ pageIn: true }))));
+  }
+  closePage() {
+    this.setState({ pageOpen: false, pageIn: false });
+    if (this.lastFocus && this.lastFocus.focus) this.lastFocus.focus();
+  }
+  downloadPage() {
+    const { model, files, draft } = this.state, src = window.__ldaBundleSource;
+    if (!model || !draft) return;
+    if (!src) { this.setState({ error: 'Page export is unavailable in this build' }); return; }
+    const title = draft.title.trim() || DEFAULT_TITLE;
+    const settings = { floor: this.state.floor, showLegend: this.state.showLegend !== false,
+      title, showControls: draft.showControls, theme: draft.theme, showThemeToggle: draft.showThemeToggle, showRibbon: draft.showRibbon,
+      stopwords: [...stopwords] };
+    const data = JSON.stringify(modelToJSON(model, files, settings)).replace(/</g, '\\u003c');
+    const island = '<script type="application/x-lda-snapshot">' + data + '<' + '/script>';
+    const html = src.replace(/<script type="application\/x-lda-snapshot">[\s\S]*?<\/script>\s*/g, '')
+      .replace(/<title>[\s\S]*?<\/title>/, '<title>' + escapeHTML(plainTitle(title)) + '</title>')
+      // Share tags: the export's own title, and no og:url (it will live elsewhere).
+      .replace(/(<meta (?:property="og:title"|name="twitter:title") content=")[^"]*(">)/g, (m, a, b) => a + escapeHTML(plainTitle(title)) + b)
+      .replace(/\s*<meta property="og:url" content="[^"]*">/, '')
+      .replace(/<\/body>(?![\s\S]*<\/body>)/, island + '\n</body>');
+    const slug = plainTitle(title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 60) || 'lda';
+    download(slug + '-k' + model.K + '.html', html, 'text/html');
+    this.closePage();
+  }
+  flashNote(note, ms = 2500) {
+    clearTimeout(this.noteTimer);
+    this.setState({ note });
+    if (note) this.noteTimer = setTimeout(() => this.setState({ note: null }), ms);
+  }
+  copySnippet() {
+    const sn = SNIPPETS.find(x => x.id === this.state.importTab) || SNIPPETS[0];
+    const done = copied => this.setState({ copied });
+    // Fallback for plain-http hosts, where navigator.clipboard doesn't exist.
+    const legacy = () => {
+      const ta = Object.assign(document.createElement('textarea'), { value: sn.code });
+      ta.style.cssText = 'position: fixed; opacity: 0;';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy'); ta.remove();
+      done(ok ? sn.id : 'failed');
+    };
+    (navigator.clipboard ? navigator.clipboard.writeText(sn.code) : Promise.reject()).then(() => done(sn.id), legacy);
+    clearTimeout(this.copyTimer); this.copyTimer = setTimeout(() => this.setState({ copied: null }), 2000);
+  }
+  openImport() {
+    this.lastFocus = document.activeElement;
+    this.setState({ importOpen: true, importIn: false, exportOpen: false, error: null, tip: null },
+      () => requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ importIn: true }))));
+  }
+  closeImport() {
+    this.setState({ importOpen: false, importIn: false });
+    if (this.lastFocus && this.lastFocus.focus) this.lastFocus.focus();
+    this.setState({ imTip: false });   // returning focus to the button shouldn't pop its tooltip
+  }
+
+  openModal(k) {
+    this.lastFocus = document.activeElement;
+    this.setState({ modal: k, modalIn: false, hover: null, tip: null },
+      () => requestAnimationFrame(() => requestAnimationFrame(() => this.setState({ modalIn: true }))));
+  }
+  closeModal() {
+    this.setState({ modal: null, modalIn: false });
+    if (this.lastFocus && this.lastFocus.focus) this.lastFocus.focus();
+  }
+  exitDoc() {
+    this.geoKey = null;
+    this.setState({ view: 'files', hover: null, tip: null, sent: null, step: 0, geo: { arrows: [], w: 0, h: 0 } });
+  }
+
+  measure() {
+    const root = this.rootRef.current; if (!root || this.state.view !== 'doc') return;
+    const anchors = this.anchors();
+    const els = anchors.map(a => root.querySelector(`[data-word="${a.idx}"]`));
+    const col = root.querySelector('[data-dotcol]');
+    if (!col || els.some(x => !x)) return;
+    const R = root.getBoundingClientRect(), C = col.getBoundingClientRect(), dotY = [];
+    const curved = this.props.arrowStyle === 'curved'; let prev = -Infinity;
+    const path = (x1, y1, x2, y2) => {
+      if (!curved) return `M${x1.toFixed(1)} ${y1.toFixed(1)} L${x2.toFixed(1)} ${y2.toFixed(1)}`;
+      const mx = (x1 + x2) / 2;
+      return `M${x1.toFixed(1)} ${y1.toFixed(1)} C${mx.toFixed(1)} ${y1.toFixed(1)} ${mx.toFixed(1)} ${y2.toFixed(1)} ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+    };
+    const arrows = anchors.map((w, i) => {
+      const a = els[i].getBoundingClientRect();
+      const dy = Math.max(a.top + a.height / 2 - R.top, prev + 17); prev = dy; dotY.push(dy - (C.top - R.top));
+      const line = els[i].parentElement, L = line.getBoundingClientRect(), last = line.lastElementChild;
+      const end = Math.min(last ? last.getBoundingClientRect().right : a.right, L.right);
+      const x1 = C.left - R.left + 3, x2 = Math.min(end - R.left + 8, x1 - 16), y2 = a.top + a.height / 2 - R.top;
+      return { i, d: path(x1, dy, x2, y2), len: Math.ceil(Math.hypot(x1 - x2, dy - y2) * 1.25) + 12 };
+    });
+    const geo = { arrows, dotY: dotY.map(v => Math.round(v)), w: Math.ceil(R.width), h: Math.ceil(R.height) };
+    const key = JSON.stringify(geo); if (key === this.geoKey) return; this.geoKey = key;
+    this.setState({ geo });
+  }
+
+  modalVals(active, model, files) {
+    const k = this.state.modal;
+    if (k == null || !model || k >= active.length) return { modalOn: false };
+    const t = active[k], top = t.words[0][1];
+    const docs = model.theta.map((th, d) => [d, th[k]]).sort((a, b) => b[1] - a[1]).slice(0, MODAL_DOCS);
+    return {
+      modalOn: true, mOp: this.state.modalIn ? 1 : 0, mScale: this.state.modalIn ? 1 : .85,
+      closeModal: () => this.closeModal(), stop: e => e.stopPropagation(),
+      mTitle: t.name + ' · ' + t.gloss, mGloss: t.gloss, mColor: t.color, mCount: t.words.length,
+      mMeta: t.name + ' · ' + (model.share[k] * 100).toFixed(1) + '% of corpus',
+      mWords: t.words.map(([word, p], i) => ({ rank: i + 1, word, p: p.toFixed(3), w: (p / top * 100).toFixed(1) + '%' })),
+      mDocs: docs.map(([d, v]) => ({ name: files[d].name, pct: Math.round(v * 100) + '%', w: (v / docs[0][1] * 100).toFixed(1) + '%',
+        open: () => { this.closeModal(); this.setState({ doc: d, view: 'doc', hoverFile: null, hover: null, step: 0, lineCap: LINES_PAGE }); } })),
+    };
+  }
+
+  renderVals() {
+    const { step, hover, geo, view, hoverFile, model, files, fitting } = this.state;
+    const doc = view === 'doc' && !!model;
+    const active = model ? model.topics : [];
+    const byId = Object.fromEntries(active.map((t, k) => [t.id, k]));
+    const on = t => () => this.setState({ hover: t }), off = () => this.setState({ hover: null });
+    const dim = k => hover != null && hover !== active[k].id;
+    const floor = this.state.floor || 0;
+    const D = doc ? this.curDoc() : null;
+    const vis = D ? D.lines.slice(0, this.state.lineCap) : [];
+    const anchors = vis.map(l => l.anchor).filter(Boolean);
+
+    const tipOn = tok => e => {
+      const b = e.currentTarget.getBoundingClientRect(), W = 272, H = 168 + active.length * 21;
+      const x = Math.min(Math.max(8, b.left + b.width / 2 - W / 2), innerWidth - W - 8);
+      const y = Math.max(8, Math.min(b.bottom + 10 + H > innerHeight ? b.top - H - 10 : b.bottom + 10, innerHeight - H - 8));
+      this.setState({ tip: { tok, x, y } });
+    };
+    const tipOff = () => this.setState({ tip: null });
+    const tipRes = (() => {
+      const tip = this.state.tip; if (!tip || !D) return { tipOn: false };
+      const ps = D.post.get(tip.tok.wid); if (!ps) return { tipOn: false };
+      const top = ps.p, best = active[ps.best];
+      return { tipOn: true, tipX: tip.x + 'px', tipY: tip.y + 'px', tipWord: model.terms[tip.tok.wid],
+        tipRows: active.map((t, k) => ({ color: t.color, gloss: t.name + ' · ' + t.gloss, w: (ps.probs[k] / top * 100).toFixed(1) + '%', p: ps.probs[k].toFixed(2).replace(/^0/, ''), op: k === ps.best ? 1 : .55 })),
+        // The floor compares this rescaled confidence, not the raw probabilities above,
+        // so show it: (p − 1/k) / (1 − 1/k).
+        // The topic cards show a different number: this word's share of the topic
+        // (p(word | topic), the same in every document). Show it for the top topic.
+        tipShareLabel: 'β · p(w | ' + best.name + ')', tipShare: model.phi[tip.tok.wid * model.K + ps.best].toFixed(3),
+        tipConf: ps.conf.toFixed(2) + (ps.conf >= floor ? ' ≥ ' : ' < ') + floor.toFixed(2),
+        tipNote: ps.conf >= floor ? 'Highlighted as ' + best.name + ' (' + best.gloss + ')' : 'Not highlighted: below the floor' };
+    })();
+
+    const sentMix = D && this.state.sent != null && vis[this.state.sent] ? vis[this.state.sent].mix : null;
+    const docMix = D ? model.theta[this.state.doc] : null;
+    const histMix = sentMix || docMix;
+    const hMax = histMix ? Math.max(...histMix, .01) : 1;
+    const histW = Math.max(150, Math.min(320, 28 + active.length * 24));
+    const status = this.state.error ? this.state.error
+      : this.state.note ? this.state.note
+      : fitting ? `Fitting K = ${this.state.k} · ${Math.round(this.state.progress * 100)}%`
+      : model ? `${model.source === 'browser' ? '' : model.source + ' · '}${model.D} docs · ${model.V.toLocaleString('en-US')} terms · ${Math.round(model.N).toLocaleString('en-US')} tokens`
+      : files.length ? '' : 'No corpus loaded';
+
+    const mapSrc = doc ? docMix : hoverFile != null && model ? model.theta[hoverFile] : model ? model.share : null;
+    const pos = model ? mapPositions(model.coords) : [];
+
+    return {
+      rootRef: this.rootRef,
+      ...tipRes,
+      status, statusColor: this.state.error ? 'var(--status-busy)' : 'var(--text-meta)',
+      fitting, progressW: Math.round(this.state.progress * 100) + '%',
+      upload: e => { this.loadFiles(e.target.files); e.target.value = ''; },
+      openImport: () => this.openImport(),
+      stopCount: this.state.stopCount ?? stopwords.size, openStop: () => this.openStop(),
+      ...(() => {
+        if (!this.state.stopOpen) return { stopOn: false };
+        const draft = this.state.stopDraft, q = normTok((this.state.stopInput || '').trim());
+        const current = [...stopwords], changed = draft.length !== current.length || draft.some(w => !stopwords.has(w));
+        const shown = q && !/[\s,]/.test(q) ? draft.filter(w => w.includes(q)) : draft;
+        const pending = (this.state.stopInput || '').split(/[\s,]+/).map(normTok).filter(w => w && !draft.includes(w));
+        const { model, files } = this.state;
+        const canRefit = files.length > 0 && files.every(f => f.tokens);
+        return {
+          stopOn: true, sOp: this.state.stopIn ? 1 : 0, sScale: this.state.stopIn ? 1 : .85,
+          closeStop: () => this.closeStop(), stopClick: e => e.stopPropagation(),
+          stopInput: this.state.stopInput || '', setStopInput: e => this.setState({ stopInput: e.target.value }),
+          stopKey: e => { if (e.key === 'Enter') { e.preventDefault(); this.addStopwords(); } },
+          addStop: () => this.addStopwords(), addCursor: pending.length ? 'pointer' : 'default', addOp: pending.length ? 1 : .5,
+          stopSummary: `${draft.length} word${draft.length === 1 ? '' : 's'}` + (shown.length !== draft.length ? ` · ${shown.length} match${shown.length === 1 ? '' : 'es'}` : '') + (sameAsDefault(draft) ? ' · default list' : ''),
+          resetStop: () => this.setState({ stopDraft: [...DEFAULT_STOPWORDS].sort() }),
+          clearStop: () => this.setState({ stopDraft: [] }),
+          stopChips: shown.map(word => ({ word, label: 'Remove ' + word, bg: stopwords.has(word) ? 'transparent' : 'color-mix(in oklab, var(--foreground) 8%, transparent)',
+            remove: () => this.setState(s => ({ stopDraft: s.stopDraft.filter(x => x !== word) })) })),
+          stopEmpty: !shown.length, stopEmptyText: draft.length ? `No stopwords match “${q}”. Press Enter to add it.` : 'No stopwords: every word will be modelled.',
+          stopNote: model && model.source !== 'browser' ? 'Your imported model stays as it is; the list applies to models fitted here.'
+            : canRefit ? 'Applying re-reads every document and refits the model.' : 'The list applies to the next corpus you upload.',
+          applyStop: () => changed && this.applyStopwords(), applyCursor: changed ? 'pointer' : 'default', applyOp: changed ? 1 : .45,
+          applyLabel: canRefit && (!model || model.source === 'browser') ? 'Apply & refit' : 'Apply',
+        };
+      })(),
+      undoOn: !!this.state.undo, undoName: this.state.undo ? this.state.undo.name : '', undo: () => this.undoRemove(),
+      titleSegs: titleSegs(this.state.pageTitle || DEFAULT_TITLE),
+      showControls: this.state.showControls !== false,
+      showRibbon: this.state.showRibbon !== false,
+      showThemeToggle: !this.state.themeLocked,
+      ...(() => {
+        const d = this.state.draft, open = !!this.state.pageOpen && !!d && !!model;
+        if (!open) return { pageOn: false };
+        const sw = on => ({ on: String(on), track: on ? 'var(--foreground)' : 'var(--border)', knob: on ? '16px' : '2px', knobBg: on ? 'var(--background)' : 'var(--surface-solid)' });
+        const set = patch => this.setState(s => ({ draft: { ...s.draft, ...patch } }));
+        const themeWord = { auto: 'match each viewer\'s system theme', light: 'use light mode', dark: 'use dark mode' }[d.theme];
+        return {
+          pageOn: true, pOp: this.state.pageIn ? 1 : 0, pScale: this.state.pageIn ? 1 : .85,
+          closePage: () => this.closePage(), downloadPage: () => this.downloadPage(), stopClick: e => e.stopPropagation(),
+          xTitle: d.title, setXTitle: e => set({ title: e.target.value }), xTitleSegs: titleSegs(d.title.trim() || DEFAULT_TITLE),
+          xControls: sw(d.showControls), toggleXControls: () => set({ showControls: !d.showControls }),
+          xControlsHint: d.showControls ? 'Viewers can change k, the floor and the stopword list' : `Hidden: fixed at k = ${model.K}, floor ${(+this.state.floor).toFixed(2)}`,
+          xThemes: [['auto', 'Auto'], ['light', 'Light'], ['dark', 'Dark']].map(([m, label]) => ({ label, sel: String(d.theme === m),
+            bg: d.theme === m ? 'var(--foreground)' : 'transparent', fg: d.theme === m ? 'var(--background)' : 'var(--muted)', run: () => set({ theme: m }) })),
+          xToggle: sw(d.showThemeToggle), toggleXToggle: () => set({ showThemeToggle: !d.showThemeToggle }),
+          xRibbon: sw(d.showRibbon), toggleXRibbon: () => set({ showRibbon: !d.showRibbon }),
+          xRibbonHint: d.showRibbon ? 'The animated wave pattern behind the page' : 'Plain background',
+          xToggleHint: d.showThemeToggle ? `Starts as ${d.theme === 'auto' ? 'Auto' : d.theme}; viewers can switch` : `Hidden: the page will always ${themeWord}`,
+        };
+      })(),
+      ...(() => {
+        const on = this.state.showLegend !== false, open = !!this.state.mapSettingsOpen;
+        return {
+          showLegend: on, legendChecked: String(on), mapSettingsOpen: open,
+          gearColor: open ? 'var(--foreground)' : 'var(--muted)', gearTurn: open ? '60deg' : '0deg',
+          switchTrack: on ? 'var(--foreground)' : 'var(--border)', switchKnob: on ? '16px' : '2px', switchKnobBg: on ? 'var(--background)' : 'var(--surface-solid)',
+          toggleMapSettings: () => this.setState(s => ({ mapSettingsOpen: !s.mapSettingsOpen, exportOpen: false })),
+          toggleLegend: () => this.setState(s => {
+            const next = s.showLegend === false;
+            try { localStorage.setItem('lda-show-legend', next ? '1' : '0'); } catch (err) {}
+            return { showLegend: next };
+          }),
+        };
+      })(),
+      themes: [['auto', 'Match system theme'], ['light', 'Light mode'], ['dark', 'Dark mode']].map(([m, label]) => {
+        const on = (this.state.theme || 'auto') === m;
+        return { label, checked: String(on), isAuto: m === 'auto', isLight: m === 'light', isDark: m === 'dark',
+          bg: on ? 'var(--surface-solid)' : 'transparent', shadow: on ? 'var(--shadow-sm)' : 'none', color: on ? 'var(--foreground)' : 'var(--muted)',
+          select: e => this.selectTheme(m, e) };
+      }),
+      kTip: !!this.state.kTip && !this.state.dragging, kTipOn: () => this.setState({ kTip: true }), kTipOff: () => this.setState({ kTip: false }),
+      ...(() => {
+        const K = this.state.k, imported = !!this.state.model && this.state.model.source !== 'browser';
+        return {
+          kTipAlpha: `${ALPHA_NUM} / K = ${+(ALPHA_NUM / K).toFixed(3)}`,
+          kTipEta: String(ETA),
+          kTipNote: imported ? 'These are the defaults for models fitted here. An imported model keeps the priors it was fitted with in R or Python.'
+                             : 'Fixed to match the Gibbs defaults in R\'s topicmodels package.',
+        };
+      })(),
+      upTip: !!this.state.upTip && !this.state.dragging, upTipOn: () => this.setState({ upTip: true }), upTipOff: () => this.setState({ upTip: false }),
+      imTip: !!this.state.imTip && !this.state.dragging && !this.state.importOpen, imTipOn: () => this.setState({ imTip: true }), imTipOff: () => this.setState({ imTip: false }),
+      ...(() => {
+        const tab = this.state.importTab || 'r', sn = SNIPPETS.find(x => x.id === tab);
+        return {
+          importOn: !!this.state.importOpen, iOp: this.state.importIn ? 1 : 0, iScale: this.state.importIn ? 1 : .85,
+          closeImport: () => this.closeImport(), copySnippet: () => this.copySnippet(), stop: e => e.stopPropagation(),
+          importTabs: SNIPPETS.map(x => ({ label: x.label, run: () => this.setState({ importTab: x.id, copied: null }),
+            bg: x.id === tab ? 'var(--foreground)' : 'transparent', fg: x.id === tab ? 'var(--background)' : 'var(--muted)', sel: String(x.id === tab) })),
+          snippet: sn.code, snippetNote: sn.note, snippetFile: sn.file,
+          copyLabel: this.state.copied === tab ? 'Copied' : this.state.copied === 'failed' ? 'Copy failed' : 'Copy',
+          importError: this.state.importOpen ? this.state.error : null,
+        };
+      })(),
+      dropBorder: this.state.dragging ? 'var(--foreground)' : 'var(--glass-shell-border)',
+      isDrill: doc, isOverview: !doc && files.length > 0, isEmpty: !files.length,
+      docWords: D ? D.words.toLocaleString('en-US') : '', docName: D ? D.name : '',
+      docPre: '', docEm: D ? D.name.replace(/\.[^.]+$/, '') : '',
+      fileCount: files.length, overviewHint: model ? 'click to open' : fitting ? 'fitting model' : '',
+      back: doc ? () => this.exitDoc() : undefined,
+      backCursor: doc ? 'pointer' : 'default', docsColor: doc ? 'var(--muted)' : 'var(--foreground)',
+      files: files.map((f, i) => {
+        const mix = model ? model.theta[i] : null;
+        const maxShare = model && hover != null ? Math.max(...model.theta.map(m => m[byId[hover]])) : 1;
+        const dom = mix ? mix.indexOf(Math.max(...mix)) : -1;
+        const can = !!model && f.text != null;
+        return { name: f.name, words: f.words != null ? f.words.toLocaleString('en-US') : '—',
+          segs: mix ? active.map((t, k) => ({ color: t.color, w: (mix[k] * 100).toFixed(2) + '%', op: dim(k) ? .2 : 1 })) : [],
+          domColor: dom >= 0 ? active[dom].color : 'var(--border)', domGloss: dom >= 0 ? active[dom].gloss : '—', domPct: dom >= 0 ? Math.round(mix[dom] * 100) + '%' : '',
+          op: mix && hover != null ? .3 + .7 * mix[byId[hover]] / maxShare : 1,
+          open: can ? () => this.setState({ doc: i, view: 'doc', hoverFile: null, hover: null, step: 0, lineCap: LINES_PAGE }) : undefined,
+          cursor: can ? 'pointer' : 'default', chev: can ? '›' : '',
+          remove: e => { e.stopPropagation(); this.removeFile(i); }, removeLabel: 'Remove ' + f.name + ' from corpus',
+          removeOp: hoverFile === i ? 1 : 0,
+          enter: () => this.setState({ hoverFile: i }), leave: () => this.setState({ hoverFile: null }) };
+      }),
+      toggleExport: () => model && this.setState(s => ({ exportOpen: !s.exportOpen })),
+      exportOpen: !!this.state.exportOpen && !!model,
+      exportItems: [
+        { label: 'Interactive page', ext: '.html', hint: 'Self-contained, embeddable', kind: 'page' },
+        { label: 'Document topics', ext: '.csv', hint: 'θ for every document', kind: 'theta' },
+        { label: 'Topic words', ext: '.csv', hint: `β · top ${TOP_TERMS} words per topic`, kind: 'terms' },
+        { label: 'Model', ext: '.json', hint: 'Re-import later', kind: 'json' },
+      ].map(it => ({ ...it, run: () => this.exportTo(it.kind) })),
+      exportCursor: model ? 'pointer' : 'default', exportOp: model ? 1 : .5,
+      floor: this.state.floorText ?? (+this.state.floor).toFixed(2),
+      setF: e => { const v = parseFloat(e.target.value); this.setState({ floorText: e.target.value, ...(isNaN(v) ? {} : { floor: Math.max(0, Math.min(.99, v)) }) }); },
+      commitF: () => this.setState({ floorText: undefined }),
+      keyF: e => this.stepKey(e, () => this.stepF(1), () => this.stepF(-1), () => this.setState({ floorText: undefined })),
+      decF: () => this.stepF(-1),
+      incF: () => this.stepF(1),
+      k: this.state.kText ?? String(this.state.k),
+      setK: e => this.setState({ kText: e.target.value.replace(/[^0-9]/g, '') }),
+      commitK: () => this.commitK(),
+      keyK: e => this.stepKey(e, () => this.stepK(1), () => this.stepK(-1), () => this.commitK()),
+      decK: () => this.stepK(-1),
+      incK: () => this.stepK(1),
+      lines: vis.map(l => ({
+        indent: '0px',
+        segs: l.segs.map(s => {
+          if (s.idx == null) return { text: s.text, idx: '', color: 'inherit', bg: 'transparent', line: 'transparent', op: hover != null ? .45 : 1 };
+          const c = active[s.topic].color, lit = step > 0 && s.conf >= floor;
+          return { text: s.text, idx: s.idx, enter: tipOn(s), leave: tipOff,
+            color: 'var(--foreground)', bg: lit ? `color-mix(in oklab, ${c} 26%, transparent)` : 'transparent', line: lit ? c : 'transparent', op: dim(s.topic) ? .3 : 1 };
+        }),
+      })),
+      hasMore: D ? D.lines.length > this.state.lineCap : false,
+      moreCount: D ? Math.max(0, D.lines.length - this.state.lineCap).toLocaleString('en-US') : '',
+      showMore: () => this.setState(s => ({ lineCap: s.lineCap + LINES_PAGE })),
+      dots: anchors.map((w, i) => ({ idx: w.idx, y: ((geo.dotY || [])[i] ?? 0) - 7 + 'px', vis: geo.dotY ? 'visible' : 'hidden', color: active[w.topic].color,
+        enter: () => this.setState({ sent: w.line, hover: null }), leave: () => this.setState({ sent: null }),
+        op: i < step ? (w.conf < floor ? .15 : dim(w.topic) ? .2 : 1) : 0, scale: i < step ? 1 : 0 })),
+      histW: histW + 'px', histCol: histW + 'px', barGap: active.length > 10 ? '3px' : '6px',
+      histTitle: sentMix ? 'This line' : 'this document', histSym: sentMix ? '' : 'θ · ',
+      bars: histMix ? active.map((t, k) => {
+        const p = histMix[k];
+        return { color: t.color, fill: `color-mix(in oklab, ${t.color} 55%, transparent)`, label: active.length > 10 ? '' : active.length > 6 ? p.toFixed(2).slice(1) : p.toFixed(2),
+          h: 88 * p / hMax + '%', op: sentMix ? 1 : dim(k) ? .25 : 1, enter: on(t.id), leave: off };
+      }) : [],
+      arrows: geo.arrows.map(a => {
+        const w = anchors[a.i], show = w && a.i < step && w.conf >= floor;
+        return { d: a.d, len: a.len, off: show ? 0 : a.len, delay: '0s', op: !show ? 0 : dim(w.topic) ? .08 : hover != null ? .9 : .5 };
+      }),
+      geoW: geo.w, geoH: geo.h,
+      mapScope: !model ? '' : doc ? 'this document' : hoverFile != null ? files[hoverFile].name : 'whole corpus',
+      ...(() => {
+        const big = circleD(MAP_LEGEND[0]);
+        return {
+          legendH: big + 'px',
+          legend: MAP_LEGEND.map(p => {
+            const d = circleD(p);
+            return { d: d + 'px', left: (big - d) / 2 + 'px', cx: big / 2 + 'px', top: big - d + 'px', labelTop: big - d - 7 + 'px', label: Math.round(p * 100) + '%' };
+          }),
+          anyClamped: !!mapSrc && mapSrc.some(p => circleD(p) < MAP_MIN_D),
+          minPct: (Math.pow(MAP_MIN_D / MAP_SCALE, 2) * 100).toFixed(0) + '%',
+        };
+      })(),
+      mapTopics: active.map((t, k) => {
+        const p = mapSrc[k], lit = hover === t.id;
+        const clamped = circleD(p) < MAP_MIN_D;
+        return { x: pos[k][0], y: pos[k][1], d: Math.max(circleD(p), MAP_MIN_D) + 'px', num: k + 1, pct: p < .005 ? '<1%' : Math.round(p * 100) + '%',
+          border: clamped ? 'dashed' : 'solid', title: t.name + ' · ' + t.gloss + (clamped ? ' · drawn larger than scale' : ''),
+          color: t.color, fill: `color-mix(in oklab, ${t.color} ${lit ? 40 : 22}%, transparent)`,
+          op: sentMix ? (k === sentMix.indexOf(Math.max(...sentMix)) ? 1 : .12 + .3 * Math.pow(sentMix[k] / hMax, 3)) : dim(k) ? .3 : 1, enter: on(t.id), leave: off };
+      }),
+      cardTerms: CARD_TERMS,
+      ...this.modalVals(active, model, files),
+      topics: active.map((t, k) => ({ name: t.name, gloss: t.gloss, color: t.color, words: t.words.slice(0, CARD_TERMS).map(([word, p]) => ({ word, p: p.toFixed(3) })),
+        share: Math.round(model.share[k] * 100) + '%', aria: 'Open details for ' + t.name + ', ' + t.gloss,
+        open: () => this.openModal(k), key: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); this.openModal(k); } },
+        op: dim(k) ? .3 : 1, enter: on(t.id), leave: off })),
+    };
+  }
+}
+</script>
+
+
+</div></div></div></x-dc></body></html>

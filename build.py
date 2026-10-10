@@ -26,7 +26,8 @@ DESCRIPTION = ("Interactive LDA topic model visualizer that runs entirely in the
 # Favicon ("LDA" in Geist on the site's #171717) and the unpack screen live here too.
 # Social preview tags. They must live in this static shell: link-preview
 # crawlers don't run the JavaScript that unpacks the page. og-image.png is the
-# main mikaeel.ca share image (src/app/opengraph-image.png in that repo).
+# mikaeel.ca ribbon (RibbonWaveBackground at 655 CSS px wide, 2x, centre crop,
+# toned to the main share image) with the site's IntertopicMap visual on top.
 META = f"""<!-- lda-meta -->
   <meta name="description" content="{DESCRIPTION}">
   <meta property="og:title" content="{TITLE}">
@@ -38,12 +39,12 @@ META = f"""<!-- lda-meta -->
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Mika">
+  <meta property="og:image:alt" content="An intertopic distance map of coloured topic bubbles over the mikaeel.ca ribbon background">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="{TITLE}">
   <meta name="twitter:description" content="{DESCRIPTION}">
   <meta name="twitter:image" content="{SITE_URL}og-image.png">
-  <meta name="twitter:image:alt" content="Mika">
+  <meta name="twitter:image:alt" content="An intertopic distance map of coloured topic bubbles over the mikaeel.ca ribbon background">
   <link rel="icon" href="favicon.png" type="image/png" sizes="32x32">
   <style id="lda-shell">
     /* Plain, theme-coloured screen while the bundle unpacks (no placeholder art or label). */

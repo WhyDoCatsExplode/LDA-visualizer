@@ -8,7 +8,10 @@ Upload plain-text documents and the page fits a Latent Dirichlet Allocation
 model locally, or import a model you already fitted in R or Python. Nothing is
 sent to a server.
 
-![Documents with their topic mixtures, the intertopic distance map and the topic cards](docs/screenshots/overview.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/overview-dark.png">
+  <img src="docs/screenshots/overview.png" alt="Documents with their topic mixtures, the intertopic distance map and the topic cards">
+</picture>
 
 The screenshots use the article's training corpus at K = 4: 64 documents from four Kaggle datasets (17 Shakespeare plays, 45 Berkshire Hathaway chairman's letters, a Friends transcript and a Drake lyrics file). Each source ends up as its own topic.
 
@@ -55,7 +58,10 @@ topic's share of all tokens in the corpus. Topics are numbered by that share,
 so Topic 1 is the largest. Click a card for its top 30 words and the documents
 whose topic mixture (θ) leans on it most.
 
-![Topic detail for the Friends topic: top words with β, and documents ranked by θ](docs/screenshots/topic-detail.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/topic-detail-dark.png">
+  <img src="docs/screenshots/topic-detail.png" alt="Topic detail for the Friends topic: top words with β, and documents ranked by θ">
+</picture>
 
 **Intertopic distance map.** One bubble per topic, so there are always *K*.
 Bubble size is the topic's share of the corpus. Position reflects how similar
@@ -73,13 +79,19 @@ p(z | w, d) ∝ θ<sub>d</sub> × β, so the same word can lean towards differen
 topics in different documents. The **Highlight floor** hides highlights the
 model is unsure about. The bar chart shows the document's topic mixture (θ).
 
-![Document view of As You Like It, with the word tooltip showing p(z | w, d) for “brother”](docs/screenshots/document-view.png)
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/document-view-dark.png">
+  <img src="docs/screenshots/document-view.png" alt="Document view of As You Like It, with the word tooltip showing p(z | w, d) for “brother”">
+</picture>
 
 **Priors.** Hover **Number of topics (K)** to see the Dirichlet priors used
 for fitting in the browser. A smaller α means each document covers fewer
 topics. An imported model keeps whatever priors it was fitted with.
 
-<img src="docs/screenshots/priors-tooltip.png" alt="Tooltip showing α = 50 / K and η = 0.1" width="340">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/priors-tooltip-dark.png">
+  <img src="docs/screenshots/priors-tooltip.png" alt="Tooltip showing α = 50 / K and η = 0.1" width="340">
+</picture>
 
 ## Usage
 

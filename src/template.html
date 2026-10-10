@@ -1769,6 +1769,21 @@ const titleSegs = t => String(t).split(/(\*[^*]+\*)/).filter(Boolean).map(p => {
 const plainTitle = t => String(t).replace(/\*/g, '').trim();
 const escapeHTML = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+// Exported pages carry the corpus + model gzipped and base64-encoded. As raw JSON a
+// large corpus runs past static hosts' per-file limits (Cloudflare Pages: 25 MiB).
+async function gzipBase64(text) {
+  const gz = new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'));
+  const buf = new Uint8Array(await new Response(gz).arrayBuffer());
+  let bin = '';
+  for (let i = 0; i < buf.length; i += 0x8000) bin += String.fromCharCode.apply(null, buf.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+async function gunzipBase64(b64) {
+  const bin = atob(b64), buf = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+  return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+}
+
 function download(name, content, type) {
   const blob = content instanceof Blob ? content : new Blob([content], { type });
   const a = document.createElement('a');
@@ -1956,7 +1971,13 @@ class Component extends DCLogic {
     if (Array.isArray(snapStops)) stopwords = new Set(snapStops.map(String));
     else try { const v = JSON.parse(localStorage.getItem('lda-stopwords') || 'null'); if (Array.isArray(v)) stopwords = new Set(v); } catch (err) {}
     this.setState({ stopCount: stopwords.size });
-    if (window.__ldaSnapshot) this.applyModelFile(window.__ldaSnapshot, new Map());
+    // Pages exported since the snapshot was compressed carry { settings, gz }; older ones
+    // carry the model JSON as-is.
+    const sn = window.__ldaSnapshot;
+    if (sn && typeof sn.gz === 'string') {
+      gunzipBase64(sn.gz).then(t => this.applyModelFile({ ...JSON.parse(t), settings: sn.settings || {} }, new Map()))
+        .catch(err => this.setState({ error: 'Could not read the embedded model: ' + (err && err.message || err) }));
+    } else if (sn) this.applyModelFile(sn, new Map());
   }
   componentWillUnmount() {
     window.removeEventListener('keydown', this.onKey);
@@ -2171,7 +2192,7 @@ class Component extends DCLogic {
     this.setState({ pageOpen: false, pageIn: false });
     if (this.lastFocus && this.lastFocus.focus) this.lastFocus.focus();
   }
-  downloadPage() {
+  async downloadPage() {
     const { model, files, draft } = this.state, src = window.__ldaBundleSource;
     if (!model || !draft) return;
     if (!src) { this.setState({ error: 'Page export is unavailable in this build' }); return; }
@@ -2179,7 +2200,11 @@ class Component extends DCLogic {
     const settings = { floor: this.state.floor, showLegend: this.state.showLegend !== false,
       title, showControls: draft.showControls, theme: draft.theme, showThemeToggle: draft.showThemeToggle, showRibbon: draft.showRibbon,
       stopwords: [...stopwords] };
-    const data = JSON.stringify(modelToJSON(model, files, settings)).replace(/</g, '\\u003c');
+    // Settings stay plain JSON (the theme script reads them before first paint); the
+    // corpus + model are gzipped. base64 has no "<", so only settings need escaping.
+    const { settings: _, ...body } = modelToJSON(model, files, settings);
+    const gz = await gzipBase64(JSON.stringify(body));
+    const data = JSON.stringify({ settings, gz }).replace(/</g, '\\u003c');
     const island = '<script type="application/x-lda-snapshot">' + data + '<' + '/script>';
     const html = src.replace(/<script type="application\/x-lda-snapshot">[\s\S]*?<\/script>\s*/g, '')
       .replace(/<title>[\s\S]*?<\/title>/, '<title>' + escapeHTML(plainTitle(title)) + '</title>')

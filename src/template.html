@@ -941,19 +941,22 @@
     a { color: var(--foreground); } a:hover { opacity: .9; }
     .lda-sym { text-transform: none; letter-spacing: 0; }
     /* Embed mode: the document is as tall as its content, whatever the frame's height.
-       No 100vh floor, no inner scroller on the documents panel, no vh caps. */
+       No 100vh floor and no vh caps. The map and topic cards set the height; the
+       documents panel matches them and scrolls inside, as it does standalone. */
     html.lda-embed, html.lda-embed body, html.lda-embed #dc-root, html.lda-embed #dc-root > .sc-host { height: auto !important; }
     html.lda-embed [data-lda-root] { min-height: 0 !important; }
-    html.lda-embed [data-lda-scroll] { position: relative !important; inset: auto !important; flex: 1 0 auto; overflow: visible !important; }
-    html.lda-embed [data-lda-cap="code"] { max-height: 320px !important; }
-    html.lda-embed [data-lda-cap="list"] { max-height: 440px !important; }
+    /* Modals centre in the part of the frame the reader can see (--lda-view-*, set from
+       script when one is about to open), not in the middle of a tall frame. */
+    html.lda-embed [data-lda-modal] { inset: auto 0 auto 0 !important; top: var(--lda-view-top, 0px) !important; height: var(--lda-view-h, 100%) !important; box-sizing: border-box; }
+    html.lda-embed [data-lda-cap="code"] { max-height: min(320px, max(120px, calc(var(--lda-view-h, 9999px) * .34))) !important; }
+    html.lda-embed [data-lda-cap="list"] { max-height: min(440px, max(140px, calc(var(--lda-view-h, 9999px) * .46))) !important; }
     @keyframes ldaTip { from { opacity: 0; transform: translateY(4px) scale(.97); } to { opacity: 1; transform: none; } }
   </style>
 </helmet>
 <sc-if value="{{ ribbonFixed }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="MikaDesignSystem_f8c809.RibbonWaveBackground" hint-size="0px,0px"></x-import></sc-if>
 <sc-if value="{{ desktopNoteOn }}" hint-placeholder-val="{{ false }}">
   <div sc-camel-on-click="{{ closeDesktopNote }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
-  <div sc-camel-on-click="{{ closeDesktopNote }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+  <div sc-camel-on-click="{{ closeDesktopNote }}" data-lda-modal="1" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
     <div role="dialog" aria-modal="true" aria-label="Built for desktop" sc-camel-on-click="{{ stopDesktopNote }}" style="width: 100%; max-width: 380px;">
       <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
         <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center;">
@@ -996,7 +999,7 @@
 </sc-if>
 <sc-if value="{{ stopOn }}" hint-placeholder-val="{{ false }}">
   <div sc-camel-on-click="{{ closeStop }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
-  <div sc-camel-on-click="{{ closeStop }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+  <div sc-camel-on-click="{{ closeStop }}" data-lda-modal="1" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
     <div role="dialog" aria-modal="true" aria-label="Edit stopwords" sc-camel-on-click="{{ stopClick }}" style="width: 100%; max-width: 640px; opacity: {{ sOp }}; transform: scale({{ sScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
       <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
         <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 16px;">
@@ -1039,7 +1042,7 @@
 </sc-if>
 <sc-if value="{{ pageOn }}" hint-placeholder-val="{{ false }}">
   <div sc-camel-on-click="{{ closePage }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
-  <div sc-camel-on-click="{{ closePage }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+  <div sc-camel-on-click="{{ closePage }}" data-lda-modal="1" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
     <div role="dialog" aria-modal="true" aria-label="Export interactive page" sc-camel-on-click="{{ stopClick }}" style="width: 100%; max-width: 620px; opacity: {{ pOp }}; transform: scale({{ pScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
       <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
         <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 18px;">
@@ -1098,7 +1101,7 @@
 </sc-if>
 <sc-if value="{{ importOn }}" hint-placeholder-val="{{ false }}">
   <div sc-camel-on-click="{{ closeImport }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
-  <div sc-camel-on-click="{{ closeImport }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+  <div sc-camel-on-click="{{ closeImport }}" data-lda-modal="1" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
     <div role="dialog" aria-modal="true" aria-label="Import a model" sc-camel-on-click="{{ stop }}" style="width: 100%; max-width: 760px; opacity: {{ iOp }}; transform: scale({{ iScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
       <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
         <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 18px;">
@@ -1140,7 +1143,7 @@
 </sc-if>
 <sc-if value="{{ modalOn }}" hint-placeholder-val="{{ false }}">
   <div sc-camel-on-click="{{ closeModal }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
-  <div sc-camel-on-click="{{ closeModal }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
+  <div sc-camel-on-click="{{ closeModal }}" data-lda-modal="1" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
     <div role="dialog" aria-modal="true" aria-label="{{ mTitle }}" sc-camel-on-click="{{ stop }}" style="width: 100%; max-width: 820px; opacity: {{ mOp }}; transform: scale({{ mScale }}); transition: transform var(--duration-modal) var(--ease-out), opacity var(--duration-modal) var(--ease-out);">
       <div style="border-radius: var(--radius-shell); background: var(--glass-shell-bg); border: 1px solid var(--glass-shell-border); backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); -webkit-backdrop-filter: blur(var(--glass-shell-blur)) saturate(var(--glass-shell-saturate)); padding: var(--glass-outer-pad); box-shadow: var(--shadow-lg);">
         <div style="border-radius: var(--radius-panel); background: var(--glass-panel-bg); backdrop-filter: blur(var(--glass-panel-blur)); -webkit-backdrop-filter: blur(var(--glass-panel-blur)); padding: var(--glass-inner-pad); display: flex; flex-direction: column; gap: 20px;">
@@ -1318,7 +1321,7 @@
     </div>
 
     <div style="flex: 1; min-height: 420px; position: relative; display: flex; flex-direction: column; border-radius: 1.5rem; padding: 12px; border: 1px solid {{ dropBorder }}; background: var(--glass-shell-bg); backdrop-filter: blur(24px) saturate(1.5); box-shadow: 0 8px 32px rgb(0 0 0 / .10); transition: border-color .2s;">
-      <div data-lda-scroll="1" style="position: absolute; inset: 12px; overflow-y: auto; overflow-x: hidden; border-radius: 1rem; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+      <div style="position: absolute; inset: 12px; overflow-y: auto; overflow-x: hidden; border-radius: 1rem; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
       <sc-if value="{{ isDrill }}" hint-placeholder-val="{{ false }}">
       <div ref="{{ rootRef }}" style="flex: 1 0 auto; position: relative; border-radius: 1rem; background: var(--glass-panel-bg); padding: 28px 32px 32px; display: grid; grid-template-columns: minmax(0, max-content) minmax(16px, 1fr) 26px minmax(40px, 96px) {{ histCol }}; column-gap: 0; align-items: stretch; align-content: start;">
 
@@ -2025,6 +2028,32 @@ class Component extends DCLogic {
         }, ms);
       };
       this.queueHeight();
+      // Where is the reader looking? A frame as tall as its content is mostly off screen,
+      // so before a modal can open (any press or key), note the visible slice of the frame.
+      // First a guess around the event, then the real slice from an IntersectionObserver,
+      // which sees through the frame to the top-level viewport, on any origin.
+      this.onLook = e => {
+        const set = (top, h) => {
+          const st = document.documentElement.style;
+          st.setProperty('--lda-view-top', Math.round(top) + 'px'); st.setProperty('--lda-view-h', Math.round(h) + 'px');
+        };
+        const el = document.querySelector('[data-lda-root]'); if (!el) return;
+        if (e.target && e.target.closest && e.target.closest('[data-lda-modal]')) return;   // already placed
+        let y = e.clientY;
+        if (typeof y !== 'number') { const t = e.target && e.target.getBoundingClientRect ? e.target.getBoundingClientRect() : null; y = t ? t.top + t.height / 2 : innerHeight / 2; }
+        const top = Math.max(0, Math.min(y - 400, innerHeight - 800));
+        set(top, Math.min(800, innerHeight));
+        if (!window.IntersectionObserver) return;
+        this.lookIo && this.lookIo.disconnect();
+        this.lookIo = new IntersectionObserver(entries => {
+          const r = entries[entries.length - 1].intersectionRect;
+          if (r.height > 0) set(r.top, r.height);
+          this.lookIo.disconnect();
+        });
+        this.lookIo.observe(el);
+      };
+      window.addEventListener('pointerdown', this.onLook, true);
+      window.addEventListener('keydown', this.onLook, true);
     }
     this.ro = new ResizeObserver(() => { cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(() => this.measure()); });
     this.ro.observe(document.body);
@@ -2053,6 +2082,8 @@ class Component extends DCLogic {
     clearTimeout(this.fitTimer); this.runId++;
     this.ro && this.ro.disconnect();
     this.embedRo && this.embedRo.disconnect(); clearTimeout(this.heightTimer);
+    this.lookIo && this.lookIo.disconnect();
+    if (this.onLook) { window.removeEventListener('pointerdown', this.onLook, true); window.removeEventListener('keydown', this.onLook, true); }
   }
   // The runtime only passes prevProps, so diff against a snapshot of state.
   componentDidUpdate(prev) {

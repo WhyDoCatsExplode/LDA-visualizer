@@ -20,6 +20,11 @@
     if (st.showThemeToggle !== false) try { m = localStorage.getItem('lda-theme') || m; } catch (e) {}
     var dark = m === 'dark' || (m === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
     document.documentElement.classList.toggle('dark', dark);
+    // Embed mode: inside a frame, or ?embed=1 (for hosts on another origin). The page
+    // then sizes to its content instead of the window; see the html.lda-embed rules.
+    var embed = /[?&]embed=1(?:&|#|$)/.test(location.search);
+    try { embed = embed || window.self !== window.top; } catch (e) { embed = true; }
+    document.documentElement.classList.toggle('lda-embed', embed);
   })();
 </script>
 <script src="c9b5937c-d632-41ca-8932-5cd1eaf3c705"></script>
@@ -935,10 +940,17 @@
     html, body { margin: 0; background: var(--background); color: var(--foreground); }
     a { color: var(--foreground); } a:hover { opacity: .9; }
     .lda-sym { text-transform: none; letter-spacing: 0; }
+    /* Embed mode: the document is as tall as its content, whatever the frame's height.
+       No 100vh floor, no inner scroller on the documents panel, no vh caps. */
+    html.lda-embed, html.lda-embed body, html.lda-embed #dc-root, html.lda-embed #dc-root > .sc-host { height: auto !important; }
+    html.lda-embed [data-lda-root] { min-height: 0 !important; }
+    html.lda-embed [data-lda-scroll] { position: relative !important; inset: auto !important; flex: 1 0 auto; overflow: visible !important; }
+    html.lda-embed [data-lda-cap="code"] { max-height: 320px !important; }
+    html.lda-embed [data-lda-cap="list"] { max-height: 440px !important; }
     @keyframes ldaTip { from { opacity: 0; transform: translateY(4px) scale(.97); } to { opacity: 1; transform: none; } }
   </style>
 </helmet>
-<sc-if value="{{ showRibbon }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="MikaDesignSystem_f8c809.RibbonWaveBackground" hint-size="0px,0px"></x-import></sc-if>
+<sc-if value="{{ ribbonFixed }}" hint-placeholder-val="{{ true }}"><x-import component-from-global-scope="MikaDesignSystem_f8c809.RibbonWaveBackground" hint-size="0px,0px"></x-import></sc-if>
 <sc-if value="{{ desktopNoteOn }}" hint-placeholder-val="{{ false }}">
   <div sc-camel-on-click="{{ closeDesktopNote }}" style="position: fixed; inset: 0; z-index: 55; background: var(--scrim-bg); backdrop-filter: blur(var(--scrim-blur)); -webkit-backdrop-filter: blur(var(--scrim-blur));"></div>
   <div sc-camel-on-click="{{ closeDesktopNote }}" style="position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: var(--space-4); font-family: var(--font-body); color: var(--foreground);">
@@ -1107,7 +1119,7 @@
 
           <div style="position: relative; border: 1px solid var(--border); border-radius: var(--radius-sm); background: color-mix(in oklab, var(--background) 55%, transparent);">
             <button type="button" sc-camel-on-click="{{ copySnippet }}" style="position: absolute; top: 10px; right: 10px; height: 28px; padding: 0 12px; border: 1px solid var(--glass-shell-border); border-radius: 0.6rem; background: var(--glass-shell-bg); color: var(--foreground); font-family: var(--font-body); font-size: 12px; cursor: pointer;" style-hover="opacity: .9;">{{ copyLabel }}</button>
-            <pre style="margin: 0; max-height: 34vh; overflow: auto; padding: 16px 18px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; color: var(--foreground); tab-size: 4; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">{{ snippet }}</pre>
+            <pre data-lda-cap="code" style="margin: 0; max-height: 34vh; overflow: auto; padding: 16px 18px; font-family: var(--font-mono); font-size: 12.5px; line-height: 1.6; color: var(--foreground); tab-size: 4; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">{{ snippet }}</pre>
           </div>
           <div style="margin-top: -8px; font-size: 12px; color: var(--muted);">{{ snippetNote }} Also saved as <span style="font-family: var(--font-mono);">{{ snippetFile }}</span> in the project.</div>
 
@@ -1143,7 +1155,7 @@
           <div style="display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 28px;">
             <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
               <div style="display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);"><span>Top {{ mCount }} words (<span class="lda-sym">w</span>)</span><span title="β = p(w | z): the probability of each word given this topic. The same in every document.">Topic-word distribution · <span class="lda-sym">β</span></span></div>
-              <div style="max-height: 46vh; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 3px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+              <div data-lda-cap="list" style="max-height: 46vh; overflow-y: auto; padding-right: 6px; display: flex; flex-direction: column; gap: 3px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
                 <sc-for list="{{ mWords }}" as="w" hint-placeholder-count="10">
                   <div style="display: grid; grid-template-columns: 22px minmax(0, 1fr) minmax(40px, 1fr) 48px; column-gap: 10px; align-items: center; font-size: 14px; line-height: 1.7;">
                     <span style="font-family: var(--font-mono); font-size: 11px; color: var(--muted); text-align: right;">{{ w.rank }}</span>
@@ -1156,7 +1168,7 @@
             </div>
             <div style="display: flex; flex-direction: column; gap: 10px; min-width: 0;">
               <div style="display: flex; justify-content: space-between; font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--text-meta);"><span title="θ: the proportion of each document made up of this topic">Documents by topic mixture</span><span class="lda-sym">θ</span></div>
-              <div style="max-height: 46vh; overflow-y: auto; overflow-x: hidden; padding: 0 8px; margin: 0 -8px; display: flex; flex-direction: column; gap: 2px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+              <div data-lda-cap="list" style="max-height: 46vh; overflow-y: auto; overflow-x: hidden; padding: 0 8px; margin: 0 -8px; display: flex; flex-direction: column; gap: 2px; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
                 <sc-for list="{{ mDocs }}" as="d" hint-placeholder-count="6">
                   <div sc-camel-on-click="{{ d.open }}" title="Open {{ d.name }}" style="display: grid; grid-template-columns: minmax(0, 1fr) 56px 36px 10px; column-gap: 10px; align-items: center; padding: 6px 8px; margin: 0 -8px; border-radius: 0.6rem; font-size: 14px; cursor: pointer;" style-hover="background: color-mix(in oklab, var(--foreground) 6%, transparent);">
                     <span style="min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ d.name }}</span>
@@ -1174,7 +1186,8 @@
     </div>
   </div>
 </sc-if>
-<div style="position: relative; z-index: 1; min-height: 100vh; box-sizing: border-box; padding: 40px 32px 88px; background: transparent; color: var(--foreground); font-family: var(--font-body); overflow-x: auto;">
+<div data-lda-root="1" data-lda-model="{{ modelShown }}" style="position: relative; z-index: 1; min-height: 100vh; box-sizing: border-box; padding: 40px 32px 88px; background: transparent; color: var(--foreground); font-family: var(--font-body); overflow-x: auto;">
+  <sc-if value="{{ ribbonEmbed }}" hint-placeholder-val="{{ false }}"><x-import component-from-global-scope="MikaDesignSystem_f8c809.RibbonWaveBackground" position="absolute" style="display: block; position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none;" hint-size="0px,0px"></x-import></sc-if>
   <footer style="position: absolute; left: 0; right: 0; bottom: 24px; display: flex; justify-content: center; pointer-events: none;">
     <a href="https://mikaeel.ca" target="_blank" rel="noopener" style="pointer-events: auto; display: flex; align-items: baseline; gap: 6px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-meta); text-decoration: none; opacity: .7; transition: opacity .2s;" style-hover="opacity: 1;">
       <span>Built by</span><em style="font-family: var(--font-accent); font-size: 14px; letter-spacing: 0; text-transform: none; color: var(--muted);">Mika</em><span style="color: var(--border);">|</span><span style="text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--muted);">mikaeel.ca</span>
@@ -1305,7 +1318,7 @@
     </div>
 
     <div style="flex: 1; min-height: 420px; position: relative; display: flex; flex-direction: column; border-radius: 1.5rem; padding: 12px; border: 1px solid {{ dropBorder }}; background: var(--glass-shell-bg); backdrop-filter: blur(24px) saturate(1.5); box-shadow: 0 8px 32px rgb(0 0 0 / .10); transition: border-color .2s;">
-      <div style="position: absolute; inset: 12px; overflow-y: auto; overflow-x: hidden; border-radius: 1rem; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
+      <div data-lda-scroll="1" style="position: absolute; inset: 12px; overflow-y: auto; overflow-x: hidden; border-radius: 1rem; display: flex; flex-direction: column; scrollbar-width: thin; scrollbar-color: var(--border) transparent;">
       <sc-if value="{{ isDrill }}" hint-placeholder-val="{{ false }}">
       <div ref="{{ rootRef }}" style="flex: 1 0 auto; position: relative; border-radius: 1rem; background: var(--glass-panel-bg); padding: 28px 32px 32px; display: grid; grid-template-columns: minmax(0, max-content) minmax(16px, 1fr) 26px minmax(40px, 96px) {{ histCol }}; column-gap: 0; align-items: stretch; align-content: start;">
 
@@ -1477,6 +1490,7 @@ const ALPHA_NUM = 50, ETA = 0.1;              // Gibbs priors: alpha = 50 / k, e
 const CARD_TERMS = 5;                         // words per topic card
 const TOP_TERMS = 30;                         // words in the topic detail modal
 const MODAL_DOCS = 10;                        // documents listed in the topic detail modal
+const EMBED = document.documentElement.classList.contains('lda-embed');   // set in <head>
 const LINES_PAGE = 300;                       // drill-down renders this many lines at a time
 const WRAP = 72;                              // drill-down line width, in characters
 
@@ -1983,6 +1997,35 @@ class Component extends DCLogic {
     this.onNarrow = () => this.setState({ narrow: this.mqNarrow.matches });
     this.onNarrow();
     this.mqNarrow.addEventListener('change', this.onNarrow);
+    // Embedded: tell the host how tall the content is, so it need not measure the DOM.
+    // The root is measured rather than documentElement.scrollHeight, which a frame taller
+    // than the content would floor. Measuring runs from a timer, not inside the observer
+    // callback (no resize loop) and not on an animation frame (those stop while the frame
+    // is off screen or in a background tab).
+    if (EMBED) {
+      const toHost = msg => { if (window.parent !== window) window.parent.postMessage(msg, '*'); };
+      this.postHeight = () => {
+        const el = document.querySelector('[data-lda-root]'); if (!el) return;
+        if (!this.embedRo) (this.embedRo = new ResizeObserver(this.queueHeight)).observe(el);
+        const h = Math.ceil(el.getBoundingClientRect().height);
+        if (h === this.lastHeight) return;
+        this.lastHeight = h;
+        toHost({ type: 'lda-height', height: h });
+        window.dispatchEvent(new Event('resize'));   // the ribbon only re-sizes on window resize
+      };
+      this.queueHeight = (ms = 0) => {
+        if (this.heightTimer) return;
+        this.heightTimer = setTimeout(() => {
+          this.heightTimer = 0; this.postHeight();
+          if (!this.state.model || this.readySent) return;
+          // Ready only once the model is in the DOM (the template renders after setState).
+          const el = document.querySelector('[data-lda-root]');
+          if (el && el.dataset.ldaModel === '1') { this.readySent = true; toHost({ type: 'lda-ready' }); }
+          else this.queueHeight(50);
+        }, ms);
+      };
+      this.queueHeight();
+    }
     this.ro = new ResizeObserver(() => { cancelAnimationFrame(this.raf); this.raf = requestAnimationFrame(() => this.measure()); });
     this.ro.observe(document.body);
     // An exported page carries its corpus + model; see the capture script build.py adds.
@@ -2009,9 +2052,11 @@ class Component extends DCLogic {
     this.mqNarrow && this.mqNarrow.removeEventListener('change', this.onNarrow);
     clearTimeout(this.fitTimer); this.runId++;
     this.ro && this.ro.disconnect();
+    this.embedRo && this.embedRo.disconnect(); clearTimeout(this.heightTimer);
   }
   // The runtime only passes prevProps, so diff against a snapshot of state.
   componentDidUpdate(prev) {
+    if (EMBED) this.queueHeight();   // covers a hidden frame, where ResizeObserver is paused
     const s = this.state, ps = this.snap || {};
     // Lock page scroll only while a modal is actually showing (a refit can remove its topic).
     const locked = !!s.importOpen || !!s.pageOpen || !!s.stopOpen || (s.modal != null && !!s.model && s.modal < s.model.K);
@@ -2408,9 +2453,11 @@ class Component extends DCLogic {
       undoOn: !!this.state.undo, undoName: this.state.undo ? this.state.undo.name : '', undo: () => this.undoRemove(),
       titleSegs: titleSegs(this.state.pageTitle || DEFAULT_TITLE),
       showControls: this.state.showControls !== false,
-      showRibbon: this.state.showRibbon !== false,
+      modelShown: this.state.model ? '1' : '0',
+      ribbonFixed: this.state.showRibbon !== false && !EMBED,
+      ribbonEmbed: this.state.showRibbon !== false && EMBED,
       showThemeToggle: !this.state.themeLocked,
-      desktopNoteOn: !!this.state.narrow && !this.state.noteDismissed,
+      desktopNoteOn: !!this.state.narrow && !this.state.noteDismissed && !EMBED,
       closeDesktopNote: () => this.setState({ noteDismissed: true }),
       stopDesktopNote: e => e.stopPropagation(),
       ...(() => {
